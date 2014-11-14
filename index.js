@@ -33,7 +33,7 @@ function getStrims () {
     'viewercount' : Object.keys(io.strims).reduce(function (previous, key) {
       return previous + io.strims[key];
     }, 0),
-    'strims' : io.strims
+    'streams' : io.strims
   }
 }
 io.strims = {}
