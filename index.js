@@ -67,6 +67,7 @@ io.on('connection', function(socket){
 
 
 app.get('/api', function(req, res){
+  res.set("Connection", "close");
   res.send(getStrims());
   res.end()
 });
