@@ -23,7 +23,7 @@ function isGood(s){
   if(path.search(REGEX) > -1){
     return false
   }
-  return "/"+path
+  return "/"+path.toLowerCase()
 }
 
 var strims = {}
@@ -45,7 +45,7 @@ io.on('connection', function(socket){
     socket.disconnect()
     return
   }
-  console.log('a user joined '+strim);
+  console.log('a user joined '+strim, socket.request.connection._peername);
   socket.strim = strim
   if(strim in io.strims){
     io.strims[strim] = io.strims[strim] + 1
@@ -70,6 +70,10 @@ app.get('/api', function(req, res){
   res.set("Connection", "close");
   res.send(getStrims());
   res.end()
+});
+
+app.get('/strims.js', function(req, res){
+  res.sendFile(__dirname + '/strims.js');
 });
 
 // for debug to serve different urls
