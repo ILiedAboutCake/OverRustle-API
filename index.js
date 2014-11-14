@@ -68,6 +68,7 @@ io.on('connection', function(socket){
 
 app.get('/api', function(req, res){
   res.send(getStrims());
+  res.end()
 });
 
 // for debug to serve different urls
