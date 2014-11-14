@@ -1,0 +1,10 @@
+{
+  "name": "overrustle-api",
+  "version": "0.0.1",
+  "description": "overustle.com api server",
+  "repository" : "git@github.com:hayksaakian/OverRustle-API.git",
+  "dependencies": {
+    "express": "^4.10.2",
+    "socket.io": "^1.2.0"
+  }
+}
