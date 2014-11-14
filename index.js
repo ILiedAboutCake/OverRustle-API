@@ -45,7 +45,7 @@ io.on('connection', function(socket){
     socket.disconnect()
     return
   }
-  console.log('a user joined '+strim);
+  console.log('a user joined '+strim, socket.request.connection._peername);
   socket.strim = strim
   if(strim in io.strims){
     io.strims[strim] = io.strims[strim] + 1
