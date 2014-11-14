@@ -23,7 +23,7 @@ function isGood(s){
   if(path.search(REGEX) > -1){
     return false
   }
-  return path
+  return "/"+path
 }
 
 var strims = {}
