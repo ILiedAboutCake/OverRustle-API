@@ -4,6 +4,7 @@ var io = require('socket.io')(http);
 
 var PORT = 9998;
 var REGEX = /[^A-z 0-9 \?\&\/=/:/-]/ig
+var MAX_CONNECTIONS = 5
 
 function isGood(s){
   if(typeof(s) !== typeof('string')){
@@ -37,23 +38,25 @@ function getStrims () {
   }
 }
 io.strims = {}
+io.ips = {} // address: number_of_connections
 io.on('connection', function(socket){
   // console.log(socket.request.headers)
-  var strim = isGood(socket.request.headers.referer)
-  if(strim === false){
-    console.log('BLOCKED a connection:', socket.request.connection._peername);
+  socket.ip = socket.request.connection._peername.address;
+  var strim = isGood(socket.request.headers.referer);
+  if(strim === false || ((socket.ip in io.ips) && (io.ips[socket.ip]+1 > MAX_CONNECTIONS))){
+    var reason = strim === false ? "bad strim" : "too many connections"
+    console.log('BLOCKED a connection because '+reason+':', socket.request.connection._peername);
     socket.disconnect()
     return
   }
   console.log('a user joined '+strim, socket.request.connection._peername);
   socket.strim = strim
-  if(strim in io.strims){
-    io.strims[strim] = io.strims[strim] + 1
-  }else{
-    io.strims[strim] = 1
-  }
+  io.strims[strim] = 1 + ((strim in io.strims) ? io.strims[strim] : 0)
+  io.ips[socket.ip] = 1 + ((socket.ip in io.ips) ? io.ips[socket.ip] : 0)
   io.emit('strims', io.strims)
+
   socket.on('disconnect', function(){
+    // remove stream
     if(socket.hasOwnProperty('strim') && socket.strim in io.strims){
       io.strims[socket.strim] += -1
       if(io.strims[socket.strim] <= 0){
@@ -61,6 +64,13 @@ io.on('connection', function(socket){
       }
       console.log('user disconnected from '+socket.strim);
       io.emit('strims', io.strims)
+    }
+    // remove IP
+    if(socket.hasOwnProperty('ip') && (socket.ip in io.ips)){
+      io.ips[socket.ip] += -1
+      if(io.ips[socket.ip] <= 0){
+        delete io.ips[socket.ip]
+      }
     }
   });
 });
