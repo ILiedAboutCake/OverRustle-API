@@ -53,7 +53,7 @@ io.on('connection', function(socket){
   socket.strim = strim
   io.strims[strim] = 1 + ((strim in io.strims) ? io.strims[strim] : 0)
   io.ips[socket.ip] = 1 + ((socket.ip in io.ips) ? io.ips[socket.ip] : 0)
-  io.emit('strims', io.strims)
+  io.emit('strims', getStrims())
 
   socket.on('disconnect', function(){
     // remove stream
@@ -63,7 +63,7 @@ io.on('connection', function(socket){
         delete io.strims[socket.strim]
       }
       console.log('user disconnected from '+socket.strim);
-      io.emit('strims', io.strims)
+      io.emit('strims', getStrims())
     }
     // remove IP
     if(socket.hasOwnProperty('ip') && (socket.ip in io.ips)){
