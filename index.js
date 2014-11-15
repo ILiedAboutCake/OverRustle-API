@@ -43,7 +43,7 @@ io.on('connection', function(socket){
   // console.log(socket.request.headers)
   socket.ip = socket.request.connection._peername.address;
   var strim = isGood(socket.request.headers.referer);
-  if(strim === false || ((socket.ip in io.ips) && (io.ips[ip]+1 > MAX_CONNECTIONS))){
+  if(strim === false || ((socket.ip in io.ips) && (io.ips[socket.ip]+1 > MAX_CONNECTIONS))){
     var reason = strim === false ? "bad strim" : "too many connections"
     console.log('BLOCKED a connection because '+reason+':', socket.request.connection._peername);
     socket.disconnect()
