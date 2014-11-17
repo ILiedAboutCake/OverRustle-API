@@ -27,6 +27,10 @@ function isGood(s){
   return "/"+path.toLowerCase()
 }
 
+function isIdle (s) {
+  return (s === "/destinychat" || s === "/strims")
+}
+
 var strims = {}
 
 function getStrims () {
@@ -34,10 +38,15 @@ function getStrims () {
     'viewercount' : Object.keys(io.strims).reduce(function (previous, key) {
       return previous + io.strims[key];
     }, 0),
-    'streams' : io.strims
+    'idlecount' : Object.keys(io.idlers).reduce(function (previous, key) {
+      return previous + io.idlers[key];
+    }, 0),
+    'streams' : io.strims,
+    'idlers' : io.idlers
   }
 }
 io.strims = {}
+io.idlers = {}
 io.ips = {} // address: number_of_connections
 io.on('connection', function(socket){
   // console.log(socket.request.headers)
@@ -49,21 +58,31 @@ io.on('connection', function(socket){
     socket.disconnect()
     return
   }
+  socket.idle = isIdle(strim);
+  io.ips[socket.ip] = 1 + ((socket.ip in io.ips) ? io.ips[socket.ip] : 0);
+  socket.section = socket.idle ? "idlers" : "strims";
+  if (socket.idle) {
+    console.log('a user is idle on '+strim, socket.request.connection._peername);
+    socket.emit('strims', getStrims())
+  }
   console.log('a user joined '+strim, socket.request.connection._peername);
   socket.strim = strim
-  io.strims[strim] = 1 + ((strim in io.strims) ? io.strims[strim] : 0)
-  io.ips[socket.ip] = 1 + ((socket.ip in io.ips) ? io.ips[socket.ip] : 0)
-  io.emit('strims', getStrims())
+  io[socket.section][strim] = 1 + ((strim in io[socket.section]) ? io[socket.section][strim] : 0)
+  if(!socket.idle){
+    io.emit('strims', getStrims())
+  }
 
   socket.on('disconnect', function(){
     // remove stream
     if(socket.hasOwnProperty('strim') && socket.strim in io.strims){
-      io.strims[socket.strim] += -1
-      if(io.strims[socket.strim] <= 0){
-        delete io.strims[socket.strim]
+      io[socket.section][socket.strim] += -1
+      if(io[socket.section][socket.strim] <= 0){
+        delete io[socket.section][socket.strim]
       }
       console.log('user disconnected from '+socket.strim);
-      io.emit('strims', getStrims())
+      if((!socket.hasOwnProperty('idle') || !socket.idle)){
+        io.emit('strims', getStrims())
+      }
     }
     // remove IP
     if(socket.hasOwnProperty('ip') && (socket.ip in io.ips)){
