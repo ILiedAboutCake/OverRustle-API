@@ -41,6 +41,9 @@ function getStrims () {
     'idlecount' : Object.keys(io.idlers).reduce(function (previous, key) {
       return previous + io.idlers[key];
     }, 0),
+    'connections' : Object.keys(io.ips).reduce(function (previous, key) {
+      return previous + io.ips[key];
+    }, 0),
     'streams' : io.strims,
     'idlers' : io.idlers
   }
@@ -74,13 +77,13 @@ io.on('connection', function(socket){
 
   socket.on('disconnect', function(){
     // remove stream
-    if(socket.hasOwnProperty('strim') && socket.strim in io.strims){
+    if(socket.hasOwnProperty('strim') && socket.hasOwnProperty('section') && (socket.strim in io[socket.section]) ){
       io[socket.section][socket.strim] += -1
       if(io[socket.section][socket.strim] <= 0){
         delete io[socket.section][socket.strim]
       }
       console.log('user disconnected from '+socket.strim);
-      if((!socket.hasOwnProperty('idle') || !socket.idle)){
+      if(!socket.hasOwnProperty('idle') || !socket.idle){
         io.emit('strims', getStrims())
       }
     }
