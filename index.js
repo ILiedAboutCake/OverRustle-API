@@ -28,7 +28,9 @@ function isGood(s){
 }
 
 function isIdle (s) {
-  return (s === "/destinychat" || s === "/strims")
+  var parts = url.parse(s, true).query
+  var valid_strim = parts.hasOwnProperty('s') && parts.hasOwnProperty('stream')
+  return valid_strim === false
 }
 
 var strims = {}
