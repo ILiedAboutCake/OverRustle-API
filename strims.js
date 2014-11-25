@@ -1,6 +1,6 @@
 // client side code
 
-var socket = io('http://overrustle.com:9998');
+var socket = io('http://api.overrustle.com');
 
 socket.on('strims', function(api_data){
   var strims = api_data["streams"]
