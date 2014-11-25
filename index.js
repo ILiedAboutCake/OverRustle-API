@@ -1,6 +1,7 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var url = require('url')
 
 var PORT = 9998;
 var REGEX = /[^A-z 0-9 \?\&\/=/:/-]/ig
