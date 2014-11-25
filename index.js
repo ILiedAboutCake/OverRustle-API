@@ -1,10 +1,86 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var request = require('request');
 
 var PORT = 9998;
 var REGEX = /[^A-z 0-9 \?\&\/=/:/-]/ig
 var MAX_CONNECTIONS = 5
+var DEFAULT_PLACEHOLDER = "http://overrustle.com/img/jigglymonkey.gif"
+
+var PLACEHOLDERS = {
+
+}
+
+var IMAGE_APIS = {
+  // todo: return a promise object, 
+  // with a callback that returns an image_url
+  twitch: function (channel, callback) {
+    return http.get({json:true, 
+      uri:"http://api.twitch.tv/kraken/streams/"+channel})
+    .on('response', function(res) {
+      var json = res
+      var live = json.stream === null // TODO
+      // console.log("Got response: " + res.statusCode);
+      if(live){
+        // raise an error?
+        callback(json.stream.preview.large);
+      }else{
+        callback(getPlaceholder('twitch'))
+      }
+    })
+  },
+  hitbox: function (channel, callback) {
+    return http.get({json:true, 
+      uri:"http://api.hitbox.tv/media/stream/"+channel})
+    .on('response', function(res) {
+      var json = res
+      var live = true // todo: get live status from hitbox
+      // console.log("Got response: " + res.statusCode);
+      if(live){
+        // todo: maybe get their offline image?
+        callback("edge.sf.hitbox.tv" + json.livestream[0].media_thumbnail_large);
+      }else{
+        callback(getPlaceholder('hitbox'))
+      }
+    })
+  },
+  ustream: function (channel, callback) {
+    return http.get({json:true, 
+      uri:"http://api.ustream.tv/channels/"+channel+".json"})
+    .on('response', function(res) {
+      var json = res
+      var live = true // todo: get live status from ustream
+      // console.log("Got response: " + res.statusCode);
+      if(live){
+        // todo: maybe get their offline image?
+        callback(json.channel.thumbnail.live);
+      }else{
+        callback(getPlaceholder('ustream'))
+      }
+    })
+  },
+}
+
+function getImage (platform, channel, callback) {
+  if(platform in IMAGE_APIS){
+    IMAGE_APIS[platform](channel, callback).on('error', function(e) {
+      console.log("ERR: GETing thumbnail for "+channel+" on "+platform+" - Got error: " + e.message);
+      callback(getPlaceholder(platform))
+    });
+  }else{
+    callback(getPlaceholder(platform));
+  }
+}
+// todo: placeholders for each platform
+
+function getPlaceholder (platform) {
+  var placeholder = DEFAULT_PLACEHOLDER
+  if(plaform in placeholders){
+    return placeholders[platform]
+  }
+  return placeholder
+}
 
 function isGood(s){
   if(typeof(s) !== typeof('string')){
@@ -47,10 +123,13 @@ function getStrims () {
       return previous + io.ips[key];
     }, 0),
     'streams' : io.strims,
-    'idlers' : io.idlers
+    'idlers' : io.idlers,
+    'metadata' : io.metadata
   }
 }
 io.strims = {}
+io.metadata = {}
+io.metaindex = {}
 io.idlers = {}
 io.ips = {} // address: number_of_connections
 io.on('connection', function(socket){
@@ -66,16 +145,8 @@ io.on('connection', function(socket){
   socket.idle = isIdle(strim);
   io.ips[socket.ip] = 1 + ((socket.ip in io.ips) ? io.ips[socket.ip] : 0);
   socket.section = socket.idle ? "idlers" : "strims";
-  if (socket.idle) {
-    console.log('a user is idle on '+strim, socket.request.connection._peername);
-    socket.emit('strims', getStrims())
-  }
-  console.log('a user joined '+strim, socket.request.connection._peername);
   socket.strim = strim
   io[socket.section][strim] = 1 + ((strim in io[socket.section]) ? io[socket.section][strim] : 0)
-  if(!socket.idle){
-    io.emit('strims', getStrims())
-  }
 
   socket.on('disconnect', function(){
     // remove stream
@@ -97,6 +168,34 @@ io.on('connection', function(socket){
       }
     }
   });
+
+  if (socket.idle) {
+    console.log('a user is idle on '+strim, socket.request.connection._peername);
+    socket.emit('strims', getStrims())
+  else{
+    // get metadata
+    var parts = url.parse(strim, true).query
+    var meta_key = parts['s']+'/'+parts['stream']
+    var metadata = {}
+
+    if(io.metadata.hasOwnProperty(meta_key) === false){
+      var md = {};
+      md.platform = parts.s;
+      md.channel = parts.stream;
+      md.image_url = getPlaceholder(md.platform);
+
+      metadata = md;
+      io.metadata[meta_key] = md;
+      io.metaindex[strim] = meta_key;
+    }
+
+    console.log('a user joined '+strim, socket.request.connection._peername);
+    io.emit('strims', getStrims());
+    getImage(metadata.platform, metadata.channel, function(image_url){
+      io.metadata[meta_key].image_url = image_url
+      io.emit('strims', getStrims());
+    })
+  }
 });
 
 
