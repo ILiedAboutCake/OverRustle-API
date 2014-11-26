@@ -31,6 +31,10 @@ function isGood(s){
 function isIdle (s) {
   var parts = url.parse(s, true).query
   var valid_strim = parts.hasOwnProperty('s') && parts.hasOwnProperty('stream')
+  if(valid_strim === false){
+    // in case someone is on a channel page
+    valid_strim = parts.hasOwnProperty('user')
+  }
   return valid_strim === false
 }
 
