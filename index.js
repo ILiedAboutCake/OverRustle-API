@@ -56,6 +56,11 @@ io.idlers = {}
 io.ips = {} // address: number_of_connections
 io.on('connection', function(socket){
   // console.log(socket.request.headers)
+  // set the proper IP address if this request was forwarded 
+  // this lets us properly track requests that pass through a cache
+  if(socket.request.headers.hasOwnProperty('x-forwarded-for')){
+    socket.request.connection._peername.address = socket.request.headers['x-forwarded-for'];
+  }
   socket.ip = socket.request.connection._peername.address;
   var strim = isGood(socket.request.headers.referer);
   if(strim === false || ((socket.ip in io.ips) && (io.ips[socket.ip]+1 > MAX_CONNECTIONS))){
