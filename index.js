@@ -7,6 +7,19 @@ var PORT = 9998;
 var REGEX = /[^A-z 0-9 \?\&\/=/:/-]/ig
 var MAX_CONNECTIONS = 5
 
+var shortcuts = {
+  't':'twitch',
+  'v':'twitch-vod',
+  'c':'castamp',
+  'h':'hitbox',
+  'y':'youtube',
+  'm':'mlg',
+  'u':'ustream',
+  'd':'dailymotion',
+  'a':'azubu',
+  'p':'picarto'
+}
+
 function isGood(s){
   if(typeof(s) !== typeof('string')){
     return false
@@ -110,20 +123,44 @@ io.on('connection', function(socket){
 });
 
 
-app.get('/api', function(req, res){
+app.get('/api', function (req, res){
   res.set("Connection", "close");
   res.send(getStrims());
   res.end()
 });
 
-app.get('/strims.js', function(req, res){
+app.get('/strims.js', function (req, res){
   res.sendFile(__dirname + '/strims.js');
 });
 
 // for debug to serve different urls
-app.get('/*', function(req, res){
-  res.sendFile(__dirname + '/index.html');
-});
+// app.get('/*', function(req, res){
+//   res.sendFile(__dirname + '/index.html');
+// });
+
+app.get('/', function (req, res) {
+  var redirect_to = 'http://overrustle.com/strims'
+  console.log('redirecting to: '+redirect_to);
+  res.redirect(redirect_to)
+})
+app.get('/:platform/:channel', function (req, res) {
+  if (req.params.platform in shortcuts) {
+    req.params.platform = shortcuts[req.params.platform]
+  };
+  var redirect_to = 'http://overrustle.com/destinychat?s='
+  + req.params.platform
+  + '&stream='
+  + req.params.channel;
+  console.log('redirecting to: '+redirect_to);
+  res.redirect(redirect_to)
+})
+// handle custom user channels
+app.get('/:channel', function (req, res) {
+  var redirect_to = 'http://overrustle.com/channel?user='
+  + req.params.channel;
+  console.log('redirecting to: '+redirect_to);
+  res.redirect(redirect_to)
+})
 
 http.listen(PORT, function(){
   console.log('listening on *:'+PORT);
