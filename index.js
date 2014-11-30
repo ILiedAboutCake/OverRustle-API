@@ -141,25 +141,25 @@ app.get('/strims.js', function (req, res){
 app.get('/', function (req, res) {
   var redirect_to = 'http://overrustle.com/strims'
   console.log('redirecting to: '+redirect_to);
-  res.redirect(redirect_to)
+  res.redirect(redirect_to);
 })
 app.get('/:platform/:channel', function (req, res) {
-  if (req.params.platform in shortcuts) {
-    req.params.platform = shortcuts[req.params.platform]
+  if (shortcuts.hasOwnProperty(req.params.platform)) {
+    req.params.platform = shortcuts[req.params.platform];
   };
   var redirect_to = 'http://overrustle.com/destinychat?s='
   + req.params.platform
   + '&stream='
   + req.params.channel;
   console.log('redirecting to: '+redirect_to);
-  res.redirect(redirect_to)
+  res.redirect(url.format(redirect_to));
 })
 // handle custom user channels
 app.get('/:channel', function (req, res) {
   var redirect_to = 'http://overrustle.com/channel?user='
   + req.params.channel;
   console.log('redirecting to: '+redirect_to);
-  res.redirect(redirect_to)
+  res.redirect(url.format(redirect_to));
 })
 
 http.listen(PORT, function(){
