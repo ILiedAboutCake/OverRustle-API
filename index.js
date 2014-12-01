@@ -19,40 +19,47 @@ var IMAGE_APIS = {
   twitch: function (channel, callback) {
     return request.get({json:true, uri:"https://api.twitch.tv/kraken/streams/"+channel}, function (e, r, res) {
       var json = res
-      var live = json.stream !== null // TODO
+      var api_data = {}
+      api_data.live = json.stream !== null // TODO
       // console.log("Got response: " + res.statusCode);
-      if(live){
+      if(api_data.live){
         // raise an error?
-        callback(json.stream.preview.large);
+        api_data.image_url = json.stream.preview.large;
       }else{
-        callback(getPlaceholder('twitch'))
+        api_data.image_url = getPlaceholder('twitch')
       }
+      callback(api_data)
     })
   },
   hitbox: function (channel, callback) {
-    return http.get({json:true, uri:"http://api.hitbox.tv/media/stream/"+channel}, function (e, r, res) {      
+    return request.get({json:true, uri:"http://api.hitbox.tv/media/stream/"+channel}, function (e, r, res) {      
       var json = res
-      var live = json.hasOwnProperty('livestream') && json.livestream[0].media_is_live === "1";
+      var api_data = {}
+      api_data.live = json.hasOwnProperty('livestream') && json.livestream[0].media_is_live === "1";
       // console.log("Got response: " + res.statusCode);
-      if(live){
+      if(api_data.live){
         // todo: maybe get their offline image?
-        callback("http://edge.sf.hitbox.tv" + json.livestream[0].media_thumbnail_large);
+        api_data.image_url = "http://edge.sf.hitbox.tv" + json.livestream[0].media_thumbnail_large;
       }else{
-        callback(getPlaceholder('hitbox'))
+        api_data.image_url = getPlaceholder('hitbox')
       }
+      callback(api_data);
     })
   },
   ustream: function (channel, callback) {
-    return http.get({json:true, uri:"http://api.ustream.tv/channels/"+channel+".json"}, function (e, r, res) {      
+    return request.get({json:true, uri:"http://api.ustream.tv/channels/"+channel+".json"}, function (e, r, res) {
       var json = res
-      var live = json.channel.status === 'live' // todo: get live status from ustream
+      var api_data = {}
+      api_data.live = r.statusCode != 404 && json.channel.status === 'live' // todo: get live status from ustream
       // console.log("Got response: " + res.statusCode);
-      if(live){
+      if(api_data.live){
         // todo: maybe get their offline image?
-        callback(json.channel.thumbnail.live);
+        api_data.image_url = json.channel.thumbnail.live; 
       }else{
-        callback(getPlaceholder('ustream'))
+        console.log('getting ustream placeholder for '+channel)
+        api_data.image_url = getPlaceholder('ustream')
       }
+      callback(api_data);
     })
   },
 }
@@ -61,10 +68,10 @@ function getImage (platform, channel, callback) {
   if(IMAGE_APIS.hasOwnProperty(platform)){
     IMAGE_APIS[platform](channel, callback).on('error', function(e) {
       console.log("ERR: GETing thumbnail for "+channel+" on "+platform+" - Got error: " + e.message);
-      callback(getPlaceholder(platform))
+      callback({live: false, image_url: getPlaceholder(platform)});
     });
   }else{
-    callback(getPlaceholder(platform));
+    callback({live: true, image_url: getPlaceholder(platform)});
   }
 }
 // todo: placeholders for each platform
@@ -160,9 +167,6 @@ io.on('connection', function(socket){
   socket.section = socket.idle ? "idlers" : "strims";
   socket.strim = strim
   io[socket.section][strim] = 1 + ((io[socket.section].hasOwnProperty(strim)) ? io[socket.section][strim] : 0)
-  if(!socket.idle){
-    io.emit('strims', getStrims())
-  }
 
   socket.on('disconnect', function(){
     // remove stream
@@ -188,7 +192,7 @@ io.on('connection', function(socket){
   if (socket.idle) {
     console.log('a user is idle on '+strim, socket.request.connection._peername);
     socket.emit('strims', getStrims())
-  else{
+  }else{
     // get metadata
     var parts = url.parse(strim, true).query
     var meta_key = parts['s']+'/'+parts['stream']
@@ -209,8 +213,10 @@ io.on('connection', function(socket){
 
     console.log('a user joined '+strim, socket.request.connection._peername);
     io.emit('strims', getStrims());
-    getImage(metadata.platform, metadata.channel, function(image_url){
-      io.metadata[meta_key].image_url = image_url
+    getImage(metadata.platform, metadata.channel, function(api_data){
+      // todo: use extendify if this gets too gnarly
+      io.metadata[meta_key].live = api_data.live
+      io.metadata[meta_key].image_url = api_data.image_url
       io.emit('strims', getStrims());
     })
   }
@@ -232,6 +238,7 @@ app.get('/strims.js', function (req, res){
 //   res.sendFile(__dirname + '/index.html');
 // });
 
+// Redirects that enable nice URLs
 app.get('/', function (req, res) {
   var redirect_to = 'http://overrustle.com/strims'
   console.log('redirecting to: '+redirect_to);
