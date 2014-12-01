@@ -13,7 +13,7 @@ var PLACEHOLDERS = {
 
 }
 
-var IMAGE_APIS = {
+var STREAMING_APIS = {
   // todo: return a promise object, 
   // with a callback that returns an image_url
   twitch: function (channel, callback) {
@@ -56,7 +56,6 @@ var IMAGE_APIS = {
         // todo: maybe get their offline image?
         api_data.image_url = json.channel.thumbnail.live; 
       }else{
-        console.log('getting ustream placeholder for '+channel)
         api_data.image_url = getPlaceholder('ustream')
       }
       callback(api_data);
@@ -64,9 +63,9 @@ var IMAGE_APIS = {
   },
 }
 
-function getImage (platform, channel, callback) {
-  if(IMAGE_APIS.hasOwnProperty(platform)){
-    IMAGE_APIS[platform](channel, callback).on('error', function(e) {
+function getAPI (platform, channel, callback) {
+  if(STREAMING_APIS.hasOwnProperty(platform)){
+    STREAMING_APIS[platform](channel, callback).on('error', function(e) {
       console.log("ERR: GETing thumbnail for "+channel+" on "+platform+" - Got error: " + e.message);
       callback({live: false, image_url: getPlaceholder(platform)});
     });
@@ -139,7 +138,8 @@ function getStrims () {
     }, 0),
     'streams' : io.strims,
     'idlers' : io.idlers,
-    'metadata' : io.metadata
+    'metadata' : io.metadata,
+    'metaindex': io.metaindex
   }
 }
 io.strims = {}
@@ -196,29 +196,34 @@ io.on('connection', function(socket){
     // get metadata
     var parts = url.parse(strim, true).query
     var meta_key = parts['s']+'/'+parts['stream']
-    var metadata = {}
 
-    if(io.metadata.hasOwnProperty(meta_key) === false){
+    if(!io.metadata.hasOwnProperty(meta_key) || io.metadata[meta_key].expire_at < (new Date).getTime()){
       var md = {};
       md.platform = parts.s;
       md.channel = parts.stream;
       md.image_url = getPlaceholder(md.platform);
+      md.expire_at = (new Date).getTime()+15000;
+      // todo: decide whether we should set
+      // a 'live status' before hearing from the API
 
-      metadata = md;
       io.metadata[meta_key] = md;
       io.metaindex[strim] = meta_key;
-    }else{
-      metadata = io.metadata[meta_key]
+
+      getAPI(md.platform, md.channel, function(api_data){
+        // todo: use extendify if this gets too gnarly
+        // if we got the default placeholder, check every 15 seconds
+        // if we got a real one, check only as often as it updates
+        // twitch updates thumbs every ~15-20 minutes
+        console.log('got api data for '+meta_key)
+        io.metadata[meta_key].expire_at = (new Date).getTime()+15000
+        io.metadata[meta_key].live = api_data.live
+        io.metadata[meta_key].image_url = api_data.image_url
+        io.emit('strims', getStrims());
+      })
     }
 
     console.log('a user joined '+strim, socket.request.connection._peername);
     io.emit('strims', getStrims());
-    getImage(metadata.platform, metadata.channel, function(api_data){
-      // todo: use extendify if this gets too gnarly
-      io.metadata[meta_key].live = api_data.live
-      io.metadata[meta_key].image_url = api_data.image_url
-      io.emit('strims', getStrims());
-    })
   }
 });
 
