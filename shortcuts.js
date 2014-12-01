@@ -39,3 +39,5 @@ var shortcuts = {
     })
   }
 }
+
+module.exports = shortcuts;
