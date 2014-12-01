@@ -3,6 +3,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var url = require('url');
 var jf = require('jsonfile');
+var fs = require('fs')
 var apis = require('./apis.js')
 var shortcuts = require('./shortcuts.js')
 
@@ -59,8 +60,24 @@ function getStrims () {
   }
 }
 io.strims = {}
-io.metadata = {}
-io.metaindex = {}
+
+var metadata_path = './cache/metadata.json'
+var metaindex_path = './cache/metaindex.json'
+
+if (fs.existsSync(metadata_path)) {
+  io.metadata = jf.readFileSync(metadata_path)
+}else{
+  io.metadata = {}
+  jf.writeFileSync(metadata_path, {})  
+}
+
+if (fs.existsSync(metaindex_path)) {
+  io.metaindex = jf.readFileSync(metaindex_path)
+}else{
+  io.metaindex = {}
+  jf.writeFileSync(metaindex_path, {})  
+}
+
 io.idlers = {}
 io.ips = {} // address: number_of_connections
 io.on('connection', function(socket){
@@ -89,6 +106,19 @@ io.on('connection', function(socket){
     if(socket.hasOwnProperty('strim') && socket.hasOwnProperty('section') && (io[socket.section].hasOwnProperty(socket.strim)) ){
       io[socket.section][socket.strim] += -1
       if(io[socket.section][socket.strim] <= 0){
+        var mi = io.metaindex[socket.strim]
+        if(mi){
+          delete io.metadata[mi]
+          delete io.metaindex[socket.socket.strim]
+          jf.writeFile(metadata_path, io.metadata, function(err) {
+            if(err)
+              console.log(err)
+          });
+          jf.writeFile(metaindex_path, io.metaindex, function(err) {
+            if(err)
+              console.log(err)
+          });
+        }
         delete io[socket.section][socket.strim]
       }
       console.log('user disconnected from '+socket.strim);
@@ -135,6 +165,15 @@ io.on('connection', function(socket){
         io.metadata[meta_key].live = api_data.live
         io.metadata[meta_key].image_url = api_data.image_url
         io.emit('strims', getStrims());
+        // cache meta data
+        jf.writeFile(metadata_path, io.metadata, function(err) {
+          if(err)
+            console.log(err)
+        });
+        jf.writeFile(metaindex_path, io.metaindex, function(err) {
+          if(err)
+            console.log(err)
+        });
       })
     }
 
