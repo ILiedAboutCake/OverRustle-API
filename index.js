@@ -76,11 +76,7 @@ function getImage (platform, channel, callback) {
 // todo: placeholders for each platform
 
 function getPlaceholder (platform) {
-  var placeholder = DEFAULT_PLACEHOLDER
-  if(plaform in placeholders){
-    return placeholders[platform]
-  }
-  return placeholder
+  return PLACEHOLDERS[platform] ? PLACEHOLDERS[platform] : DEFAULT_PLACEHOLDER
 }
 
 var shortcuts = {
@@ -210,6 +206,8 @@ io.on('connection', function(socket){
       metadata = md;
       io.metadata[meta_key] = md;
       io.metaindex[strim] = meta_key;
+    }else{
+      metadata = io.metadata[meta_key]
     }
 
     console.log('a user joined '+strim, socket.request.connection._peername);
