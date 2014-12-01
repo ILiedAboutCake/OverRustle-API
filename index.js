@@ -17,11 +17,9 @@ var IMAGE_APIS = {
   // todo: return a promise object, 
   // with a callback that returns an image_url
   twitch: function (channel, callback) {
-    return http.get({json:true, 
-      uri:"http://api.twitch.tv/kraken/streams/"+channel})
-    .on('response', function(res) {
+    return request.get({json:true, uri:"https://api.twitch.tv/kraken/streams/"+channel}, function (e, r, res) {
       var json = res
-      var live = json.stream === null // TODO
+      var live = json.stream !== null // TODO
       // console.log("Got response: " + res.statusCode);
       if(live){
         // raise an error?
@@ -32,26 +30,22 @@ var IMAGE_APIS = {
     })
   },
   hitbox: function (channel, callback) {
-    return http.get({json:true, 
-      uri:"http://api.hitbox.tv/media/stream/"+channel})
-    .on('response', function(res) {
+    return http.get({json:true, uri:"http://api.hitbox.tv/media/stream/"+channel}, function (e, r, res) {      
       var json = res
-      var live = true // todo: get live status from hitbox
+      var live = json.hasOwnProperty('livestream') && json.livestream[0].media_is_live === "1";
       // console.log("Got response: " + res.statusCode);
       if(live){
         // todo: maybe get their offline image?
-        callback("edge.sf.hitbox.tv" + json.livestream[0].media_thumbnail_large);
+        callback("http://edge.sf.hitbox.tv" + json.livestream[0].media_thumbnail_large);
       }else{
         callback(getPlaceholder('hitbox'))
       }
     })
   },
   ustream: function (channel, callback) {
-    return http.get({json:true, 
-      uri:"http://api.ustream.tv/channels/"+channel+".json"})
-    .on('response', function(res) {
+    return http.get({json:true, uri:"http://api.ustream.tv/channels/"+channel+".json"}, function (e, r, res) {      
       var json = res
-      var live = true // todo: get live status from ustream
+      var live = json.channel.status === 'live' // todo: get live status from ustream
       // console.log("Got response: " + res.statusCode);
       if(live){
         // todo: maybe get their offline image?
@@ -64,7 +58,7 @@ var IMAGE_APIS = {
 }
 
 function getImage (platform, channel, callback) {
-  if(platform in IMAGE_APIS){
+  if(IMAGE_APIS.hasOwnProperty(platform)){
     IMAGE_APIS[platform](channel, callback).on('error', function(e) {
       console.log("ERR: GETing thumbnail for "+channel+" on "+platform+" - Got error: " + e.message);
       callback(getPlaceholder(platform))
@@ -76,7 +70,7 @@ function getImage (platform, channel, callback) {
 // todo: placeholders for each platform
 
 function getPlaceholder (platform) {
-  return PLACEHOLDERS[platform] ? PLACEHOLDERS[platform] : DEFAULT_PLACEHOLDER
+  return PLACEHOLDERS[platform] ? PLACEHOLDERS[platform] : DEFAULT_PLACEHOLDER;
 }
 
 var shortcuts = {
