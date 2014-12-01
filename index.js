@@ -149,21 +149,24 @@ io.on('connection', function(socket){
   }
   socket.ip = socket.request.connection._peername.address;
   var strim = isGood(socket.request.headers.referer);
-  if(strim === false || ((socket.ip in io.ips) && (io.ips[socket.ip]+1 > MAX_CONNECTIONS))){
+  if(strim === false || ((io.ips.hasOwnProperty(socket.ip)) && (io.ips[socket.ip]+1 > MAX_CONNECTIONS))){
     var reason = strim === false ? "bad strim" : "too many connections"
     console.log('BLOCKED a connection because '+reason+':', socket.request.connection._peername);
     socket.disconnect()
     return
   }
   socket.idle = isIdle(strim);
-  io.ips[socket.ip] = 1 + ((socket.ip in io.ips) ? io.ips[socket.ip] : 0);
+  io.ips[socket.ip] = 1 + ((io.ips.hasOwnProperty(socket.ip)) ? io.ips[socket.ip] : 0);
   socket.section = socket.idle ? "idlers" : "strims";
   socket.strim = strim
-  io[socket.section][strim] = 1 + ((strim in io[socket.section]) ? io[socket.section][strim] : 0)
+  io[socket.section][strim] = 1 + ((io[socket.section].hasOwnProperty(strim)) ? io[socket.section][strim] : 0)
+  if(!socket.idle){
+    io.emit('strims', getStrims())
+  }
 
   socket.on('disconnect', function(){
     // remove stream
-    if(socket.hasOwnProperty('strim') && socket.hasOwnProperty('section') && (socket.strim in io[socket.section]) ){
+    if(socket.hasOwnProperty('strim') && socket.hasOwnProperty('section') && (io[socket.section].hasOwnProperty(socket.strim)) ){
       io[socket.section][socket.strim] += -1
       if(io[socket.section][socket.strim] <= 0){
         delete io[socket.section][socket.strim]
@@ -174,7 +177,7 @@ io.on('connection', function(socket){
       }
     }
     // remove IP
-    if(socket.hasOwnProperty('ip') && (socket.ip in io.ips)){
+    if(socket.hasOwnProperty('ip') && (io.ips.hasOwnProperty(socket.ip))){
       io.ips[socket.ip] += -1
       if(io.ips[socket.ip] <= 0){
         delete io.ips[socket.ip]
