@@ -1,96 +1,14 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var request = require('request');
-var url = require('url')
+var url = require('url');
+var jf = require('jsonfile');
+var apis = require('./apis.js')
+var shortcuts = require('./shortcuts.js')
 
 var PORT = 9998;
 var REGEX = /[^A-z 0-9 \?\&\/=/:/-]/ig
 var MAX_CONNECTIONS = 5
-var DEFAULT_PLACEHOLDER = "http://overrustle.com/img/jigglymonkey.gif"
-
-var PLACEHOLDERS = {
-
-}
-
-var STREAMING_APIS = {
-  // todo: return a promise object, 
-  // with a callback that returns an image_url
-  twitch: function (channel, callback) {
-    return request.get({json:true, uri:"https://api.twitch.tv/kraken/streams/"+channel}, function (e, r, res) {
-      var json = res
-      var api_data = {}
-      api_data.live = json.stream !== null // TODO
-      // console.log("Got response: " + res.statusCode);
-      if(api_data.live){
-        // raise an error?
-        api_data.image_url = json.stream.preview.large;
-      }else{
-        api_data.image_url = getPlaceholder('twitch')
-      }
-      callback(api_data)
-    })
-  },
-  hitbox: function (channel, callback) {
-    return request.get({json:true, uri:"http://api.hitbox.tv/media/stream/"+channel}, function (e, r, res) {      
-      var json = res
-      var api_data = {}
-      api_data.live = json.hasOwnProperty('livestream') && json.livestream[0].media_is_live === "1";
-      // console.log("Got response: " + res.statusCode);
-      if(api_data.live){
-        // todo: maybe get their offline image?
-        api_data.image_url = "http://edge.sf.hitbox.tv" + json.livestream[0].media_thumbnail_large;
-      }else{
-        api_data.image_url = getPlaceholder('hitbox')
-      }
-      callback(api_data);
-    })
-  },
-  ustream: function (channel, callback) {
-    return request.get({json:true, uri:"http://api.ustream.tv/channels/"+channel+".json"}, function (e, r, res) {
-      var json = res
-      var api_data = {}
-      api_data.live = r.statusCode != 404 && json.channel.status === 'live' // todo: get live status from ustream
-      // console.log("Got response: " + res.statusCode);
-      if(api_data.live){
-        // todo: maybe get their offline image?
-        api_data.image_url = json.channel.thumbnail.live; 
-      }else{
-        api_data.image_url = getPlaceholder('ustream')
-      }
-      callback(api_data);
-    })
-  },
-}
-
-function getAPI (platform, channel, callback) {
-  if(STREAMING_APIS.hasOwnProperty(platform)){
-    STREAMING_APIS[platform](channel, callback).on('error', function(e) {
-      console.log("ERR: GETing thumbnail for "+channel+" on "+platform+" - Got error: " + e.message);
-      callback({live: false, image_url: getPlaceholder(platform)});
-    });
-  }else{
-    callback({live: true, image_url: getPlaceholder(platform)});
-  }
-}
-// todo: placeholders for each platform
-
-function getPlaceholder (platform) {
-  return PLACEHOLDERS[platform] ? PLACEHOLDERS[platform] : DEFAULT_PLACEHOLDER;
-}
-
-var shortcuts = {
-  't':'twitch',
-  'v':'twitch-vod',
-  'c':'castamp',
-  'h':'hitbox',
-  'y':'youtube',
-  'm':'mlg',
-  'u':'ustream',
-  'd':'dailymotion',
-  'a':'azubu',
-  'p':'picarto'
-}
 
 function isGood(s){
   if(typeof(s) !== typeof('string')){
@@ -201,7 +119,7 @@ io.on('connection', function(socket){
       var md = {};
       md.platform = parts.s;
       md.channel = parts.stream;
-      md.image_url = getPlaceholder(md.platform);
+      md.image_url = apis.getPlaceholder(md.platform);
       md.expire_at = (new Date).getTime()+15000;
       // todo: decide whether we should set
       // a 'live status' before hearing from the API
@@ -209,7 +127,7 @@ io.on('connection', function(socket){
       io.metadata[meta_key] = md;
       io.metaindex[strim] = meta_key;
 
-      getAPI(md.platform, md.channel, function(api_data){
+      apis.getAPI(md.platform, md.channel, function(api_data){
         // todo: use extendify if this gets too gnarly
         // if we got the default placeholder, check every 15 seconds
         // if we got a real one, check only as often as it updates
@@ -244,29 +162,7 @@ app.get('/strims.js', function (req, res){
 // });
 
 // Redirects that enable nice URLs
-app.get('/', function (req, res) {
-  var redirect_to = 'http://overrustle.com/strims'
-  console.log('redirecting to: '+redirect_to);
-  res.redirect(redirect_to);
-})
-app.get('/:platform/:channel', function (req, res) {
-  if (shortcuts.hasOwnProperty(req.params.platform)) {
-    req.params.platform = shortcuts[req.params.platform];
-  };
-  var redirect_to = 'http://overrustle.com/destinychat?s='
-  + req.params.platform
-  + '&stream='
-  + req.params.channel;
-  console.log('redirecting to: '+redirect_to);
-  res.redirect(url.format(redirect_to));
-})
-// handle custom user channels
-app.get('/:channel', function (req, res) {
-  var redirect_to = 'http://overrustle.com/channel?user='
-  + req.params.channel;
-  console.log('redirecting to: '+redirect_to);
-  res.redirect(url.format(redirect_to));
-})
+shortcuts.init(app);
 
 http.listen(PORT, function(){
   console.log('listening on *:'+PORT);

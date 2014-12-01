@@ -5,6 +5,7 @@
   "repository": "git@github.com:hayksaakian/OverRustle-API.git",
   "dependencies": {
     "express": "^4.10.2",
+    "jsonfile": "^2.0.0",
     "request": "^2.49.0",
     "socket.io": "^1.2.0"
   }
