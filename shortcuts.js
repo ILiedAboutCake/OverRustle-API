@@ -1,5 +1,7 @@
-module.exports = {
-  shortcuts: {
+var url = require('url')
+
+var shortcuts = {
+  list: {
     't':'twitch',
     'v':'twitch-vod',
     'c':'castamp',
@@ -18,8 +20,8 @@ module.exports = {
       res.redirect(redirect_to);
     })
     app.get('/:platform/:channel', function (req, res) {
-      if (shortcuts.hasOwnProperty(req.params.platform)) {
-        req.params.platform = shortcuts[req.params.platform];
+      if (shortcuts.list.hasOwnProperty(req.params.platform)) {
+        req.params.platform = shortcuts.list[req.params.platform];
       };
       var redirect_to = 'http://overrustle.com/destinychat?s='
       + req.params.platform
