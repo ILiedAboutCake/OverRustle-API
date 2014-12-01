@@ -41,8 +41,6 @@ function isIdle (s) {
   return valid_strim === false
 }
 
-var strims = {}
-
 function getStrims () {
   return {
     'viewercount' : Object.keys(io.strims).reduce(function (previous, key) {
