@@ -110,7 +110,7 @@ io.on('connection', function(socket){
         var mi = io.metaindex[socket.strim]
         if(mi){
           delete io.metadata[mi]
-          delete io.metaindex[socket.socket.strim]
+          delete io.metaindex[socket.strim]
           jf.writeFile(metadata_path, io.metadata, function(err) {
             if(err)
               console.log(err)
