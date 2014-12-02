@@ -157,15 +157,14 @@ io.on('connection', function(socket){
       io.metadata[meta_key] = md;
       io.metaindex[strim] = meta_key;
 
-      apis.getAPI(md.platform, md.channel, function(api_data){
+      apis.getAPI(md, function(api_data){
         // todo: use extendify if this gets too gnarly
         // if we got the default placeholder, check every 15 seconds
         // if we got a real one, check only as often as it updates
         // twitch updates thumbs every ~15-20 minutes
         console.log('got api data for '+meta_key)
-        io.metadata[meta_key].expire_at = (new Date).getTime()+API_CACHE_AGE
-        io.metadata[meta_key].live = api_data.live
-        io.metadata[meta_key].image_url = api_data.image_url
+        api_data.expire_at = (new Date).getTime()+API_CACHE_AGE
+        io.metadata[meta_key] = api_data
         io.emit('strims', getStrims());
         // cache meta data
         jf.writeFile(metadata_path, io.metadata, function(err) {
