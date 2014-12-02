@@ -142,6 +142,7 @@ io.on('connection', function(socket){
   }else{
     // get metadata
     var parts = url.parse(strim, true).query
+    // TODO: handle channels
     var meta_key = parts['s']+'/'+parts['stream']
 
     if(!io.metadata.hasOwnProperty(meta_key) || io.metadata[meta_key].expire_at < (new Date).getTime()){

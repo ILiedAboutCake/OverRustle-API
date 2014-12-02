@@ -12,7 +12,7 @@ var apis = {
       return request.get({json:true, uri:"https://api.twitch.tv/kraken/streams/"+channel}, function (e, r, res) {
         var json = res
         var api_data = {}
-        api_data.live = json.stream !== null // TODO
+        api_data.live = json.hasOwnProperty('stream') && json.stream !== null // TODO
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
           // raise an error?
