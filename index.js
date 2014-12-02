@@ -10,6 +10,7 @@ var shortcuts = require('./shortcuts.js')
 var PORT = 9998;
 var REGEX = /[^A-z 0-9 \?\&\/=/:/-]/ig
 var MAX_CONNECTIONS = 5
+var API_CACHE_AGE = 60000
 
 function isGood(s){
   if(typeof(s) !== typeof('string')){
@@ -148,7 +149,7 @@ io.on('connection', function(socket){
       md.platform = parts.s;
       md.channel = parts.stream;
       md.image_url = apis.getPlaceholder(md.platform);
-      md.expire_at = (new Date).getTime()+15000;
+      md.expire_at = (new Date).getTime()+API_CACHE_AGE;
       // todo: decide whether we should set
       // a 'live status' before hearing from the API
 
@@ -161,7 +162,7 @@ io.on('connection', function(socket){
         // if we got a real one, check only as often as it updates
         // twitch updates thumbs every ~15-20 minutes
         console.log('got api data for '+meta_key)
-        io.metadata[meta_key].expire_at = (new Date).getTime()+15000
+        io.metadata[meta_key].expire_at = (new Date).getTime()+API_CACHE_AGE
         io.metadata[meta_key].live = api_data.live
         io.metadata[meta_key].image_url = api_data.image_url
         io.emit('strims', getStrims());
