@@ -145,6 +145,7 @@ io.on('connection', function(socket){
     
     var consider_metadata = function(md) {
       var meta_key = md['platform']+'/'+md['channel']
+      console.log('considering metadata', meta_key)
       if(!io.metadata.hasOwnProperty(meta_key) || io.metadata[meta_key].expire_at < (new Date).getTime()){
         md.image_url = apis.getPlaceholder(md.platform);
         md.expire_at = (new Date).getTime()+API_CACHE_AGE;
@@ -153,7 +154,7 @@ io.on('connection', function(socket){
 
         io.metadata[meta_key] = md;
         io.metaindex[strim] = meta_key;
-
+        console.log('getting api for: ', md)
         apis.getAPI(md, function(api_data){
           // todo: use extendify if this gets too gnarly
           // if we got the default placeholder, check every 15 seconds
