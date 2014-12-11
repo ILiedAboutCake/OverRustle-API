@@ -60,10 +60,12 @@ var apis = {
     if(apis.STREAMING_APIS.hasOwnProperty(metadata.platform)){
       apis.STREAMING_APIS[metadata.platform](metadata, callback).on('error', function(e) {
         console.log("ERR: GETing thumbnail for "+channel+" on "+metadata.platform+" - Got error: " + e.message);
-        callback( extend(metadata, {viewers: 0, live: false, image_url: apis.getPlaceholder(metadata.platform)}) );
+        extend({viewers: 0, live: false, image_url: apis.getPlaceholder(metadata.platform)}, metadata)
+        callback(metadata);
       });
     }else{
-      callback( extend(metadata, {viewers: 0, live: true, image_url: apis.getPlaceholder(metadata.platform)}) );
+      extend({viewers: 0, live: true, image_url: apis.getPlaceholder(metadata.platform)}, metadata)
+      callback(metadata);
     }
   },
   // todo: placeholders for each platform
