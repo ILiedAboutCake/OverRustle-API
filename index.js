@@ -160,7 +160,7 @@ io.on('connection', function(socket){
           // if we got the default placeholder, check every 15 seconds
           // if we got a real one, check only as often as it updates
           // twitch updates thumbs every ~15-20 minutes
-          console.log('got api data for '+meta_key)
+          console.log('recieved api data for '+meta_key)
           api_data.expire_at = (new Date).getTime()+API_CACHE_AGE
           io.metadata[meta_key] = api_data
           io.emit('strims', getStrims());
