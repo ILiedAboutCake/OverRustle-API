@@ -59,7 +59,7 @@ var apis = {
   getAPI: function (metadata, callback) {
     if(apis.STREAMING_APIS.hasOwnProperty(metadata.platform)){
       apis.STREAMING_APIS[metadata.platform](metadata, callback).on('error', function(e) {
-        console.log("ERR: GETing thumbnail for "+channel+" on "+metadata.platform+" - Got error: " + e.message);
+        console.log("ERR: GETing thumbnail for "+metadata.channel+" on "+metadata.platform+" - Got error: " + e.message);
         extend({viewers: 0, live: false, image_url: apis.getPlaceholder(metadata.platform)}, metadata)
         callback(metadata);
       });
