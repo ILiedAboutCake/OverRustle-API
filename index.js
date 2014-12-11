@@ -79,39 +79,43 @@ if (fs.existsSync(metaindex_path)) {
   io.metaindex = {}
   jf.writeFileSync(metaindex_path, {})  
 }
-var consider_metadata = function(md) {
-  var meta_key = md['platform']+'/'+md['channel']
-  console.log('considering metadata', meta_key)
-  if(!io.metadata.hasOwnProperty(meta_key) || io.metadata[meta_key].expire_at < (new Date).getTime()){
-    md.image_url = apis.getPlaceholder(md.platform);
-    md.expire_at = (new Date).getTime()+API_CACHE_AGE;
-    // todo: decide whether we should set
-    // a 'live status' before hearing from the API
+var consider_metadata = function (strim_url) {
+  return function (md) {
+    var meta_key = md['platform']+'/'+md['channel']
+    console.log('considering metadata', meta_key)
+    if(!io.metadata.hasOwnProperty(meta_key) || io.metadata[meta_key].expire_at < (new Date).getTime()){
+      md.image_url = apis.getPlaceholder(md.platform);
+      md.expire_at = (new Date).getTime()+API_CACHE_AGE;
+      // todo: decide whether we should set
+      // a 'live status' before hearing from the API
 
-    io.metadata[meta_key] = md;
-    io.metaindex[strim] = meta_key;
-    console.log('getting api for: ', md)
-    apis.getAPI(md, function(api_data){
-      // todo: use extendify if this gets too gnarly
-      // if we got the default placeholder, check every 15 seconds
-      // if we got a real one, check only as often as it updates
-      // twitch updates thumbs every ~15-20 minutes
-      console.log('recieved api data for '+meta_key)
-      api_data.expire_at = (new Date).getTime()+API_CACHE_AGE
-      io.metadata[meta_key] = api_data
-      io.emit('strims', getStrims());
-      // cache meta data
-      jf.writeFile(metadata_path, io.metadata, function(err) {
-        if(err)
-          console.log(err)
-      });
-      jf.writeFile(metaindex_path, io.metaindex, function(err) {
-        if(err)
-          console.log(err)
-      });
-    })
+      io.metadata[meta_key] = md;
+      io.metaindex[strim_url] = meta_key;
+      console.log('getting api for: ', md)
+      apis.getAPI(md, function(api_data){
+        // todo: use extendify if this gets too gnarly
+        // if we got the default placeholder, check every 15 seconds
+        // if we got a real one, check only as often as it updates
+        // twitch updates thumbs every ~15-20 minutes
+        console.log('recieved api data for '+meta_key)
+        api_data.expire_at = (new Date).getTime()+API_CACHE_AGE
+        io.metadata[meta_key] = api_data
+        io.emit('strims', getStrims());
+        // cache meta data
+        jf.writeFile(metadata_path, io.metadata, function(err) {
+          if(err)
+            console.log(err)
+        });
+        jf.writeFile(metaindex_path, io.metaindex, function(err) {
+          if(err)
+            console.log(err)
+        });
+      })
+    }
   }
+  // body...
 }
+
 io.idlers = {}
 io.ips = {} // address: number_of_connections
 io.on('connection', function(socket){
@@ -177,9 +181,9 @@ io.on('connection', function(socket){
     var parts = url.parse(strim, true).query
     // TODO: handle channels
     if(parts.hasOwnProperty('user')){
-      channel_fetcher(parts['user'], consider_metadata)
+      channel_fetcher(parts['user'], consider_metadata(socket.strim))
     }else{
-      consider_metadata({
+      consider_metadata(socket.strim)({
         platform: parts['s'],
         channel: parts['stream']
       })
