@@ -5,8 +5,11 @@ var client = require('redis').createClient(6379, redis_host, {})
 // TODO: cache
 
 module.exports = function (channel_name, callback) {
+  console.log('getting from redis', channel_name)
   client.select(redis_db, function () {
+    console.log('selected', redis_db)
     client.hgetall("channel:"+channel_name, function (e, obj) {
+      console.log('did hgetall', 'error:', e, 'result:', obj)
       // return bad things
       // if no channel
       if(!obj || e)
