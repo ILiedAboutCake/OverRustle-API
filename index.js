@@ -28,10 +28,13 @@ function isGood(s){
   parts.shift(0)
   parts.shift(0)
   var path = parts.join('/')
-  if(path.search(REGEX) > -1){
+  if(REGEX.test(path)){
     return false
   }
-  return "/"+path.toLowerCase()
+  if(/(twitch\.tv|youtube\.com)/.test(path)){
+    path = path.toLowerCase()
+  }
+  return "/"+path
 }
 
 function isIdle (s) {

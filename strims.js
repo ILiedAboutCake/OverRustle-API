@@ -5,7 +5,10 @@ var socket = io('http://api.overrustle.com');
 
 socket.on('strims', function(api_data){
   var strims = api_data["streams"]
-  var curloc = window.location.href.replace(window.location.origin, "").toLowerCase()
-  $('#server-broadcast').html(strims[curloc]); // not using formatNumber
+  var path = window.location.href.replace(window.location.origin, "")
+  if(/(twitch\.tv|hitbox\.tv)/.test(path)){
+    path = path.toLowerCase()
+  }
+  $('#server-broadcast').html(strims[path]); // not using formatNumber
   // $('#server-broadcast').text(JSON.stringify(api_data)); // not using formatNumber
 });
