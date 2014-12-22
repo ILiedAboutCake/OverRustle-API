@@ -11,9 +11,10 @@ module.exports = function (channel_name, callback) {
       console.log('did hgetall for', channel_name, 'error:', e, 'result:', obj)
       // return bad things
       // if no channel
-      if(!obj || e)
+      if(!obj || e){
         console.log('nothing in redis SoSad')
         return
+      }
       
       callback({
         platform: obj.service,
