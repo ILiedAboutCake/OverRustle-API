@@ -9,8 +9,10 @@ var apis = {
   STREAMING_APIS: {
     // todo: return a promise object, 
     // with a callback that returns an image_url
-    twitch: function (api_data, callback) {
+    twitch: function (api_data, error_callback, callback) {
       return request.get({json:true, uri:"https://api.twitch.tv/kraken/streams/"+api_data.channel}, function (e, r, res) {
+        if(e)
+          return error_callback(e)
         var json = res
         api_data.live = json && json.hasOwnProperty('stream') && json.stream !== null // TODO
         // console.log("Got response: " + res.statusCode);
@@ -26,6 +28,8 @@ var apis = {
     },
     hitbox: function (api_data, callback) {
       return request.get({json:true, uri:"http://api.hitbox.tv/media/stream/"+api_data.channel}, function (e, r, res) {      
+        if(e)
+          return error_callback(e)
         var json = res
         var api_data = {}
         api_data.live = json.hasOwnProperty('livestream') && json.livestream[0].media_is_live === "1";
@@ -42,6 +46,8 @@ var apis = {
     },
     ustream: function (api_data, callback) {
       return request.get({json:true, uri:"http://api.ustream.tv/channels/"+api_data.channel+".json"}, function (e, r, res) {
+        if(e)
+          return error_callback(e)
         var json = res
         api_data.live = r.statusCode != 404 && json.channel.status === 'live' // todo: get live status from ustream
         // console.log("Got response: " + res.statusCode);
@@ -58,11 +64,11 @@ var apis = {
   },
   getAPI: function (metadata, callback) {
     if(apis.STREAMING_APIS.hasOwnProperty(metadata.platform)){
-      apis.STREAMING_APIS[metadata.platform](metadata, callback).on('error', function(e) {
+      apis.STREAMING_APIS[metadata.platform](metadata, function(e) {
         console.log("ERR: GETing thumbnail for "+metadata.channel+" on "+metadata.platform+" - Got error: " + e.message);
         extend({viewers: 0, live: false, image_url: apis.getPlaceholder(metadata.platform)}, metadata)
         callback(metadata);
-      });
+      }, callback);
     }else{
       extend({viewers: 0, live: true, image_url: apis.getPlaceholder(metadata.platform)}, metadata)
       callback(metadata);
