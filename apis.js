@@ -7,6 +7,7 @@ var apis = {
 
   },
   STREAMING_APIS: {
+    // TODO: get stream TITLE
     // todo: return a promise object, 
     // with a callback that returns an image_url
     twitch: function (api_data, error_callback, callback) {
@@ -26,7 +27,7 @@ var apis = {
         callback(api_data)
       })
     },
-    hitbox: function (api_data, callback) {
+    hitbox: function (api_data, error_callback, callback) {
       return request.get({json:true, uri:"http://api.hitbox.tv/media/stream/"+api_data.channel}, function (e, r, res) {      
         if(e)
           return error_callback(e)
@@ -44,7 +45,7 @@ var apis = {
         callback(api_data);
       })
     },
-    ustream: function (api_data, callback) {
+    ustream: function (api_data, error_callback, callback) {
       return request.get({json:true, uri:"http://api.ustream.tv/channels/"+api_data.channel+".json"}, function (e, r, res) {
         if(e)
           return error_callback(e)
