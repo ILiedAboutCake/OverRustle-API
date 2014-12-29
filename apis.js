@@ -32,7 +32,6 @@ var apis = {
         if(e)
           return error_callback(e)
         var json = res
-        var api_data = {}
         api_data.live = json.hasOwnProperty('livestream') && json.livestream[0].media_is_live === "1";
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
