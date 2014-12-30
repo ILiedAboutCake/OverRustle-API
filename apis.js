@@ -3,13 +3,13 @@ var extend = require('util')._extend;
 
 var apis = {
   DEFAULT_PLACEHOLDER: "http://overrustle.com/img/jigglymonkey.gif",
+  // TODO add placeholders for each individual platform
   PLACEHOLDERS: {
 
   },
   STREAMING_APIS: {
     // TODO: get stream TITLE
-    // todo: return a promise object, 
-    // with a callback that returns an image_url
+    // TODO: return a promise object, instead of nasty callbacks
     twitch: function (api_data, error_callback, callback) {
       return request.get({json:true, uri:"https://api.twitch.tv/kraken/streams/"+api_data.channel}, function (e, r, res) {
         if(e)
@@ -35,7 +35,7 @@ var apis = {
         api_data.live = json.hasOwnProperty('livestream') && json.livestream[0].media_is_live === "1";
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
-          // todo: maybe get their offline image?
+          // TODO: maybe get their offline image?
           api_data.image_url = "http://edge.sf.hitbox.tv" + json.livestream[0].media_thumbnail_large;
           api_data.viewers = parseInt(json.livestream[0].media_views, 10);
         }else{
@@ -52,7 +52,7 @@ var apis = {
         api_data.live = r.statusCode != 404 && json.channel.status === 'live' // todo: get live status from ustream
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
-          // todo: maybe get their offline image?
+          // TODO: maybe get their offline image?
           api_data.image_url = json.channel.thumbnail.live; 
           api_data.viewers = parseInt(json.channel.stats.viewer, 10);
         }else{
@@ -61,6 +61,15 @@ var apis = {
         callback(api_data);
       })
     },
+    youtube: function (api_data, error_callback, callback) {
+      api_data.live = true
+      // TODO: get the numbers from youtube if we end up
+      // actually using the API's viewer counts
+      api_data.viewers = 0
+      api_data.image_url = "http://img.youtube.com/vi/"+api_data.channel+"/maxresdefault.jpg"
+
+      callback(api_data)
+    }
   },
   getAPI: function (metadata, callback) {
     if(apis.STREAMING_APIS.hasOwnProperty(metadata.platform)){
