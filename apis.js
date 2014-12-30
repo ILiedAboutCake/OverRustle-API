@@ -21,6 +21,7 @@ var apis = {
           // raise an error?
           api_data.image_url = json.stream.preview.large;
           api_data.viewers = parseInt(json.stream.viewers, 10);
+          api_data.title = json.stream.status;
         }else{
           api_data.image_url = apis.getPlaceholder('twitch')
         }
@@ -36,8 +37,10 @@ var apis = {
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
           // TODO: maybe get their offline image?
-          api_data.image_url = "http://edge.sf.hitbox.tv" + json.livestream[0].media_thumbnail_large;
-          api_data.viewers = parseInt(json.livestream[0].media_views, 10);
+          var _stream = json.livestream[0]
+          api_data.image_url = "http://edge.sf.hitbox.tv" + _stream.media_thumbnail_large;
+          api_data.viewers = parseInt(_stream.media_views, 10);
+          api_data.title = _stream.media_status;
         }else{
           api_data.image_url = apis.getPlaceholder('hitbox')
         }
@@ -55,20 +58,31 @@ var apis = {
           // TODO: maybe get their offline image?
           api_data.image_url = json.channel.thumbnail.live; 
           api_data.viewers = parseInt(json.channel.stats.viewer, 10);
+          api_data.title = json.channel.title;
         }else{
           api_data.image_url = apis.getPlaceholder('ustream')
         }
         callback(api_data);
       })
     },
+    // https://gdata.youtube.com/feeds/api/videos/z18NGK1H8n8?v=2&alt=json
     youtube: function (api_data, error_callback, callback) {
-      api_data.live = true
-      // TODO: get the numbers from youtube if we end up
-      // actually using the API's viewer counts
-      api_data.viewers = 0
-      api_data.image_url = "http://img.youtube.com/vi/"+api_data.channel+"/maxresdefault.jpg"
-
-      callback(api_data)
+      return request.get({json:true, uri:"https://gdata.youtube.com/feeds/api/videos/"+api_data.channel+"?v=2&alt=json"}, function (e, r, res) {
+        if(e)
+          return error_callback(e)
+        var json = res
+        api_data.live = r.statusCode < 400
+        // console.log("Got response: " + res.statusCode);
+        if(api_data.live){
+          // TODO: maybe get their offline image?
+          api_data.image_url = json.entry['media$group"']['media$thumbnail'][0]['url'];
+          api_data.viewers = parseInt(json.entry['yt$statistics']['viewCount'], 10);
+          api_data.title = json.entry.title;
+        }else{
+          api_data.image_url = apis.getPlaceholder('youtube')
+        }
+        callback(api_data);
+      })
     }
   },
   getAPI: function (metadata, callback) {
