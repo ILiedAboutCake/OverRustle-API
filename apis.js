@@ -74,8 +74,9 @@ var apis = {
         api_data.live = r.statusCode < 400
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
-          // TODO: maybe get their offline image?
-          api_data.image_url = json.entry['media$group']['media$thumbnail'][0]['url'];
+          api_data.image_url = "http://img.youtube.com/vi/"+api_data.channel+"/maxresdefault.jpg"
+          // for some reason the default is ugly, so don't use it
+          // api_data.image_url = json.entry['media$group']['media$thumbnail'][0]['url'];
           api_data.viewers = parseInt(json.entry['yt$statistics']['viewCount'], 10);
           api_data.title = json.entry.title;
         }else{
