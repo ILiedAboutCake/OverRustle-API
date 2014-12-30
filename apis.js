@@ -75,7 +75,7 @@ var apis = {
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
           // TODO: maybe get their offline image?
-          api_data.image_url = json.entry['media$group"']['media$thumbnail'][0]['url'];
+          api_data.image_url = json.entry['media$group']['media$thumbnail'][0]['url'];
           api_data.viewers = parseInt(json.entry['yt$statistics']['viewCount'], 10);
           api_data.title = json.entry.title;
         }else{
