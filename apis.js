@@ -65,6 +65,26 @@ var apis = {
         callback(api_data);
       })
     },
+    azubu: function (api_data, error_callback, callback) {
+      // undocumented API's ayy lmao
+      return request.get({json:true, uri:"http://www.azubu.tv/api/video/active-stream/"+api_data.channel}, function (e, r, res) {
+        if(e)
+          return error_callback(e)
+        var json = res
+        api_data.live = r.statusCode < 400 && json.total > 0 && json.data[0].user.channel.is_live
+        // console.log("Got response: " + res.statusCode);
+        if(api_data.live){
+          var _stream = json.data[0].user.channel
+          // TODO: maybe get their offline image?
+          api_data.image_url = _stream.url_thumbnail;
+          api_data.viewers = parseInt(_stream.view_count, 10);
+          api_data.title = _stream.title;
+        }else{
+          api_data.image_url = apis.getPlaceholder('azubu')
+        }
+        callback(api_data);
+      })
+    },
     // https://gdata.youtube.com/feeds/api/videos/z18NGK1H8n8?v=2&alt=json
     youtube: function (api_data, error_callback, callback) {
       return request.get({json:true, uri:"https://gdata.youtube.com/feeds/api/videos/"+api_data.channel+"?v=2&alt=json"}, function (e, r, res) {
