@@ -98,7 +98,7 @@ var apis = {
           // for some reason the default is ugly, so don't use it
           // api_data.image_url = json.entry['media$group']['media$thumbnail'][0]['url'];
           api_data.viewers = parseInt(json.entry['yt$statistics']['viewCount'], 10);
-          api_data.title = json.entry.title;
+          api_data.title = json.entry.title['$t'];
         }else{
           api_data.image_url = apis.getPlaceholder('youtube')
         }
