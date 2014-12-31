@@ -17,6 +17,7 @@ module.exports = function (channel_name, callback) {
       }
       
       callback({
+        name: channel_name,
         platform: obj.service,
         channel: obj.stream
       })
