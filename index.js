@@ -103,6 +103,9 @@ var consider_metadata = function (strim_url) {
         console.log('recieved api data for '+meta_key)
         api_data.expire_at = (new Date).getTime()+API_CACHE_AGE
         io.metadata[meta_key] = api_data
+
+        // people on specific pages won't usually 
+        // be listening for this event, so it's fine
         io.emit('strims', getStrims());
         // cache meta data
         jf.writeFile(metadata_path, io.metadata, function(err) {
@@ -163,8 +166,11 @@ io.on('connection', function(socket){
         delete io[socket.section][socket.strim]
       }
       console.log('user disconnected from '+socket.strim);
+      // tell everyone interested (idlers)
+      io.emit('strims', getStrims());
       if(!socket.hasOwnProperty('idle') || !socket.idle){
-        io.emit('strims', getStrims())
+        // tell people on the specific strim
+        io.emit('strim.'+socket.strim, io.strims[socket.strim]);
       }
     }
     // remove IP
@@ -193,8 +199,10 @@ io.on('connection', function(socket){
     }
 
     console.log('a user joined '+strim, socket.request.connection._peername);
+    // tell idlers
     io.emit('strims', getStrims());
-
+    // tell people on the specific strim
+    io.emit('strim.'+strim, io.strims[strim]);
   }
 });
 
