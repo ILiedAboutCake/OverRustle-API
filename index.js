@@ -20,6 +20,9 @@ function isGood(s){
   if(s.length === 0){
     return false
   }
+  if(/s=(twitch|hitbox)/gi.test(s)){
+    s = s.toLowerCase()
+  }
   var parts = s.split('/')
   if(parts.length < 3){
     return false
@@ -30,9 +33,6 @@ function isGood(s){
   var path = parts.join('/')
   if(REGEX.test(path)){
     return false
-  }
-  if(/(twitch\.tv|youtube\.com)/.test(path)){
-    path = path.toLowerCase()
   }
   return "/"+path
 }

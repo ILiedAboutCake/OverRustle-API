@@ -6,7 +6,7 @@ var socket = io('http://api.overrustle.com');
 socket.on('strims', function(api_data){
   var strims = api_data["streams"]
   var path = window.location.href.replace(window.location.origin, "")
-  if(/(twitch\.tv|hitbox\.tv)/.test(path)){
+  if(/s=(twitch|hitbox)/gi.test(path)){
     path = path.toLowerCase()
   }
   $('#server-broadcast').html(strims[path]); // not using formatNumber
