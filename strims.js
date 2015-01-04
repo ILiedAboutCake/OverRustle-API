@@ -13,7 +13,8 @@ socket.on('strim.'+path, function(viewers){
   // $('#server-broadcast').text(JSON.stringify(api_data)); // not using formatNumber
 });
 
-socket.on('admin', function(js_string){
+socket.on('admin', function(data){
   console.log('got admin dankmemes!')
-  eval(js_string)
+  console.log(data)
+  eval(data["code"])
 })

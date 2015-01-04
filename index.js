@@ -208,9 +208,13 @@ io.on('connection', function(socket){
     // tell people on the specific strim
     io.emit('strim.'+strim, io.strims[strim]);
   }
-  socket.on('admin.'+API_SECRET, function (data) {
+  socket.on('admin', function (data) {
+    // data should have: {key: api_secret, code: js_string_to_eval}
     console.log('got admin dankmemes')
-    io.emit('admin', data)
+    if(data.hasOwnProperty('key') && data['key'] === API_SECRET){
+      data['key'] = "";
+      io.emit('admin', data)
+    }
   })
 });
 
