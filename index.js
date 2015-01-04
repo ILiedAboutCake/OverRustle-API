@@ -1,3 +1,5 @@
+var dotenv = require('dotenv')
+dotenv.load()
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
@@ -12,6 +14,7 @@ var PORT = 9998;
 var REGEX = /[^A-z 0-9 \?\&\/=/:/-]/ig
 var MAX_CONNECTIONS = 5
 var API_CACHE_AGE = 60000
+var API_SECRET = process.env.API_SECRET || Math.random().toString()
 
 function isGood(s){
   if(typeof(s) !== typeof('string')){
@@ -204,8 +207,10 @@ io.on('connection', function(socket){
     // tell people on the specific strim
     io.emit('strim.'+strim, io.strims[strim]);
   }
+  socket.on('admin.'+API_SECRET, function (data) {
+    io.emit('admin', data)
+  })
 });
-
 
 app.get('/api', function (req, res){
   res.set("Connection", "close");
