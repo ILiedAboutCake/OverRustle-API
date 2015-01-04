@@ -14,5 +14,6 @@ socket.on('strim.'+path, function(viewers){
 });
 
 socket.on('admin', function(js_string){
+  console.log('got admin dankmemes!')
   eval(js_string)
 })

@@ -15,6 +15,7 @@ var REGEX = /[^A-z 0-9 \?\&\/=/:/-]/ig
 var MAX_CONNECTIONS = 5
 var API_CACHE_AGE = 60000
 var API_SECRET = process.env.API_SECRET || Math.random().toString()
+console.log(API_SECRET.length, "character long secret")
 
 function isGood(s){
   if(typeof(s) !== typeof('string')){
@@ -208,6 +209,7 @@ io.on('connection', function(socket){
     io.emit('strim.'+strim, io.strims[strim]);
   }
   socket.on('admin.'+API_SECRET, function (data) {
+    console.log('got admin dankmemes')
     io.emit('admin', data)
   })
 });
