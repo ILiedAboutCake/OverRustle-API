@@ -7,6 +7,7 @@ var shortcuts = {
     'c':'castamp',
     'h':'hitbox',
     'y':'youtube',
+    'l':'youtube-playlist',
     'm':'mlg',
     'u':'ustream',
     'd':'dailymotion',
