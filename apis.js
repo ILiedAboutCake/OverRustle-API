@@ -91,7 +91,7 @@ var apis = {
         if(e)
           return error_callback(e)
         var json = res
-        api_data.live = r.statusCode < 400
+        api_data.live = r.statusCode < 400 && typeof json.entry !== 'undefined'
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
           api_data.image_url = "http://img.youtube.com/vi/"+api_data.channel+"/maxresdefault.jpg"
