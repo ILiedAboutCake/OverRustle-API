@@ -1,6 +1,8 @@
 // client side code
 
-var socket = io('http://api.overrustle.com/stream');
+var socket = io('http://api.overrustle.com/stream', {
+  reconnectionDelay: 500+(5000*Math.random())
+});
 // var socket = io('http://localhost:9998');
 
 var path = window.location.href.replace(window.location.origin, "")
