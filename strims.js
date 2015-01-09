@@ -1,6 +1,6 @@
 // client side code
 
-var socket = io('http://api.overrustle.com');
+var socket = io('http://api.overrustle.com/stream');
 // var socket = io('http://localhost:9998');
 
 var path = window.location.href.replace(window.location.origin, "")

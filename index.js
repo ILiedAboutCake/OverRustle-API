@@ -110,7 +110,7 @@ var consider_metadata = function (strim_url) {
 
         // people on specific pages won't usually 
         // be listening for this event, so it's fine
-        io.emit('strims', getStrims());
+        idlers.emit('strims', getStrims());
         // cache meta data
         jf.writeFile(metadata_path, io.metadata, function(err) {
           if(err)
@@ -128,7 +128,8 @@ var consider_metadata = function (strim_url) {
 
 io.idlers = {}
 io.ips = {} // address: number_of_connections
-io.on('connection', function(socket){
+
+function validate(socket){
   // console.log(socket.request.headers)
   // set the proper IP address if this request was forwarded 
   // this lets us properly track requests that pass through a cache
@@ -136,17 +137,36 @@ io.on('connection', function(socket){
     socket.request.connection._peername.address = socket.request.headers['x-forwarded-for'];
   }
   socket.ip = socket.request.connection._peername.address;
-  var strim = isGood(socket.request.headers.referer);
-  if(strim === false || ((io.ips.hasOwnProperty(socket.ip)) && (io.ips[socket.ip]+1 > MAX_CONNECTIONS))){
-    var reason = strim === false ? "bad strim" : "too many connections"
+  socket.strim = isGood(socket.request.headers.referer);
+  if(socket.strim === false || ((io.ips.hasOwnProperty(socket.ip)) && (io.ips[socket.ip]+1 > MAX_CONNECTIONS))){
+    var reason = socket.strim === false ? "bad strim" : "too many connections"
     console.log('BLOCKED a connection because '+reason+':', socket.request.connection._peername);
     socket.disconnect()
+    return false
+  }
+  return true
+}
+
+var watchers = io.of('/stream')
+var idlers = io.of('/streams')
+
+watchers.on('connection', function (socket) {
+  handleSocket(socket)
+})
+
+idlers.on('connection', function (socket) {
+  handleSocket(socket)
+})
+
+function handleSocket (socket){
+  if (!validate(socket)) {
     return
   }
-  socket.idle = isIdle(strim);
+  socket.idle = isIdle(socket.strim);
+
   io.ips[socket.ip] = 1 + ((io.ips.hasOwnProperty(socket.ip)) ? io.ips[socket.ip] : 0);
   socket.section = socket.idle ? "idlers" : "strims";
-  socket.strim = strim
+
   io[socket.section][strim] = 1 + ((io[socket.section].hasOwnProperty(strim)) ? io[socket.section][strim] : 0)
 
   socket.on('disconnect', function(){
@@ -171,10 +191,10 @@ io.on('connection', function(socket){
       }
       console.log('user disconnected from '+socket.strim);
       // tell everyone interested (idlers)
-      io.emit('strims', getStrims());
+      idlers.emit('strims', getStrims());
       if(!socket.hasOwnProperty('idle') || !socket.idle){
         // tell people on the specific strim
-        io.emit('strim.'+socket.strim, io.strims[socket.strim]);
+        watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
       }
     }
     // remove IP
@@ -204,9 +224,9 @@ io.on('connection', function(socket){
 
     console.log('a user joined '+strim, socket.request.connection._peername);
     // tell idlers
-    io.emit('strims', getStrims());
+    idlers.emit('strims', getStrims());
     // tell people on the specific strim
-    io.emit('strim.'+strim, io.strims[strim]);
+    watchers.emit('strim.'+strim, io.strims[strim]);
   }
   socket.on('admin', function (data) {
     // data should have: {key: api_secret, code: js_string_to_eval}
@@ -216,7 +236,7 @@ io.on('connection', function(socket){
       io.emit('admin', data)
     }
   })
-});
+}
 
 app.get('/api', function (req, res){
   res.set("Connection", "close");
