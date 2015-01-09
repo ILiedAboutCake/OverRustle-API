@@ -159,7 +159,7 @@ function handleSocket (socket){
   io.ips[socket.ip] = 1 + ((io.ips.hasOwnProperty(socket.ip)) ? io.ips[socket.ip] : 0);
   socket.section = socket.idle ? "idlers" : "strims";
 
-  io[socket.section][strim] = 1 + ((io[socket.section].hasOwnProperty(strim)) ? io[socket.section][strim] : 0)
+  io[socket.section][socket.strim] = 1 + ((io[socket.section].hasOwnProperty(socket.strim)) ? io[socket.section][socket.strim] : 0)
 
   socket.on('disconnect', function(){
     // remove stream
