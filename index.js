@@ -199,11 +199,11 @@ function handleSocket (socket){
   });
 
   if (socket.idle) {
-    console.log('a user is idle on '+strim, socket.request.connection._peername);
+    console.log('a user is idle on '+socket.strim, socket.request.connection._peername);
     socket.emit('strims', getStrims())
   }else{
     // get metadata
-    var parts = url.parse(strim, true).query
+    var parts = url.parse(socket.strim, true).query
     // TODO: handle channels
     if(parts.hasOwnProperty('user')){
       channel_fetcher(parts['user'], consider_metadata(socket.strim))
@@ -214,11 +214,11 @@ function handleSocket (socket){
       })
     }
 
-    console.log('a user joined '+strim, socket.request.connection._peername);
+    console.log('a user joined '+socket.strim, socket.request.connection._peername);
     // tell idlers
     idlers.emit('strims', getStrims());
     // tell people on the specific strim
-    watchers.emit('strim.'+strim, io.strims[strim]);
+    watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
   }
   socket.on('admin', function (data) {
     // data should have: {key: api_secret, code: js_string_to_eval}
