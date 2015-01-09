@@ -150,14 +150,6 @@ function validate(socket){
 var watchers = io.of('/stream')
 var idlers = io.of('/streams')
 
-watchers.on('connection', function (socket) {
-  handleSocket(socket)
-})
-
-idlers.on('connection', function (socket) {
-  handleSocket(socket)
-})
-
 function handleSocket (socket){
   if (!validate(socket)) {
     return
@@ -237,6 +229,14 @@ function handleSocket (socket){
     }
   })
 }
+
+watchers.on('connection', function (socket) {
+  handleSocket(socket)
+})
+
+idlers.on('connection', function (socket) {
+  handleSocket(socket)
+})
 
 app.get('/api', function (req, res){
   res.set("Connection", "close");
