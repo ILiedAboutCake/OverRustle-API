@@ -52,7 +52,7 @@ var apis = {
         if(e)
           return error_callback(e)
         var json = res
-        api_data.live = r.statusCode != 404 && json.channel.status === 'live' // todo: get live status from ustream
+        api_data.live = r.statusCode != 404 && typeof json.channel !== 'undefined' && json.channel.status === 'live' // todo: get live status from ustream
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
           // TODO: maybe get their offline image?
