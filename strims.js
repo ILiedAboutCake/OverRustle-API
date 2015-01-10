@@ -39,6 +39,10 @@ socket.on('featured_live', function(metadata){
   }
 
   Notify(label, {
+    // tag is a UID that makes the browser replace 
+    // data within notifications with the same UID
+    // instead of pushing out a totally new one
+    tag: metadata['url'],
     icon: metadata.image_url,
     body: body, 
     onclick: function () {
