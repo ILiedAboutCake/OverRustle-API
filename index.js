@@ -206,11 +206,17 @@ function handleSocket (socket){
     var parts = url.parse(socket.strim, true).query
     // TODO: handle channels
     if(parts.hasOwnProperty('user')){
-      channel_fetcher(parts['user'], consider_metadata(socket.strim))
+      channel_fetcher({
+        name: parts['user'],
+        url: socket.strim,
+        rustlers: io.strims[socket.strim]        
+      }, consider_metadata(socket.strim))
     }else{
       consider_metadata(socket.strim)({
         platform: parts['s'],
-        channel: parts['stream']
+        channel: parts['stream'],
+        url: socket.strim,
+        rustlers: io.strims[socket.strim]
       })
     }
 
@@ -225,7 +231,8 @@ function handleSocket (socket){
     console.log('got admin dankmemes')
     if(data.hasOwnProperty('key') && data['key'] === API_SECRET){
       data['key'] = "";
-      io.emit('admin', data)
+      idlers.emit('admin', data)
+      watchers.emit('admin', data)
     }
   })
 }
