@@ -17,10 +17,11 @@ module.exports = function (metadata, callback) {
         console.log('nothing in redis SoSad')
         return
       }
-      extend({
+      // this merge will override metadata values
+      extend(metadata, {
         platform: obj.service,
         channel: obj.stream
-      }, metadata)
+      })
       callback(metadata)
     })
   })

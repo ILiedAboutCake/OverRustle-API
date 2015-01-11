@@ -110,11 +110,17 @@ var apis = {
     if(apis.STREAMING_APIS.hasOwnProperty(metadata.platform)){
       apis.STREAMING_APIS[metadata.platform](metadata, function(e) {
         console.log("ERR: GETing thumbnail for "+metadata.channel+" on "+metadata.platform+" - Got error: " + e.message);
-        extend({viewers: 0, live: false, image_url: apis.getPlaceholder(metadata.platform)}, metadata)
+        // reverse merge
+        // b is written into a, and b is returned
+        // if we did it the other way, defaults would override real values
+        metadata = extend({viewers: 0, live: false, image_url: apis.getPlaceholder(metadata.platform)}, metadata)
         callback(metadata);
       }, callback);
     }else{
-      extend({viewers: 0, live: true, image_url: apis.getPlaceholder(metadata.platform)}, metadata)
+      // reverse merge
+      // b is written into a, and b is returned
+      // if we did it the other way, defaults would override real values 
+      metadata = extend({viewers: 0, live: true, image_url: apis.getPlaceholder(metadata.platform)}, metadata)
       callback(metadata);
     }
   },
