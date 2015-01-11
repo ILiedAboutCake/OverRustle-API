@@ -6,6 +6,7 @@ var io = require('socket.io')(http);
 var url = require('url');
 var jf = require('jsonfile');
 var fs = require('fs')
+var extend = require('util')._extend;
 var apis = require('./apis.js')
 var shortcuts = require('./shortcuts.js')
 var channel_fetcher = require('./channel_fetcher')
@@ -223,14 +224,20 @@ function handleSocket (socket){
     watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
   }
   socket.on('admin', function (data) {
-    // data should have: {key: api_secret, code: js_string_to_eval}
-    console.log('got admin dankmemes')
-    if(data.hasOwnProperty('key') && data['key'] === API_SECRET){
-      data['key'] = "";
-      browsers.emit('admin', data)
-      watchers.emit('admin', data)
-    }
+    admin(data)
   })
+}
+
+function admin (data) {
+  // data should have: {key: api_secret, code: js_string_to_eval}
+  console.log('got admin dankmemes')
+  if(data.hasOwnProperty('key') && data['key'] === API_SECRET){
+    data['key'] = "";
+    browsers.emit('admin', data)
+    watchers.emit('admin', data)
+    return true
+  }
+  return false
 }
 
 watchers.on('connection', function (socket) {
@@ -250,6 +257,25 @@ app.get('/api', function (req, res){
 app.get('/strims.js', function (req, res){
   res.sendFile(__dirname + '/strims.js');
 });
+
+function handleAdmin (req, res){
+  extend(req.params, req.query)
+  console.log(req.params)
+  if(req.params.hasOwnProperty('key') && req.params.hasOwnProperty('code') && admin({
+    key: req.params['key'],
+    code: req.params['code']
+  })){
+    res.sendStatus(200)
+    console.log('good dankmemes')
+  }else{
+    res.sendStatus(403)
+    console.log('bad memes')
+  }
+  res.end()
+}
+
+app.get('/admin', handleAdmin)
+app.post('/admin', handleAdmin)
 
 // for debug to serve different urls
 // app.get('/*', function(req, res){
