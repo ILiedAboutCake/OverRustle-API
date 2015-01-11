@@ -110,7 +110,7 @@ var consider_metadata = function (strim_url) {
 
         // people on specific pages won't usually 
         // be listening for this event, so it's fine
-        idlers.emit('strims', getStrims());
+        browsers.emit('strims', getStrims());
         // cache meta data
         jf.writeFile(metadata_path, io.metadata, function(err) {
           if(err)
@@ -148,7 +148,7 @@ function validate(socket){
 }
 
 var watchers = io.of('/stream')
-var idlers = io.of('/streams')
+var browsers = io.of('/streams')
 
 function handleSocket (socket){
   if (!validate(socket)) {
@@ -182,12 +182,9 @@ function handleSocket (socket){
         delete io[socket.section][socket.strim]
       }
       console.log('user disconnected from '+socket.strim);
-      // tell everyone interested (idlers)
-      idlers.emit('strims', getStrims());
-      if(!socket.hasOwnProperty('idle') || !socket.idle){
-        // tell people on the specific strim
-        watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
-      }
+
+      browsers.emit('strims', getStrims());
+      watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
     }
     // remove IP
     if(socket.hasOwnProperty('ip') && (io.ips.hasOwnProperty(socket.ip))){
@@ -221,9 +218,8 @@ function handleSocket (socket){
     }
 
     console.log('a user joined '+socket.strim, socket.request.connection._peername);
-    // tell idlers
-    idlers.emit('strims', getStrims());
-    // tell people on the specific strim
+
+    browsers.emit('strims', getStrims());
     watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
   }
   socket.on('admin', function (data) {
@@ -231,7 +227,7 @@ function handleSocket (socket){
     console.log('got admin dankmemes')
     if(data.hasOwnProperty('key') && data['key'] === API_SECRET){
       data['key'] = "";
-      idlers.emit('admin', data)
+      browsers.emit('admin', data)
       watchers.emit('admin', data)
     }
   })
@@ -241,7 +237,7 @@ watchers.on('connection', function (socket) {
   handleSocket(socket)
 })
 
-idlers.on('connection', function (socket) {
+browsers.on('connection', function (socket) {
   handleSocket(socket)
 })
 
