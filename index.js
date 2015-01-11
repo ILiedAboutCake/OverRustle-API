@@ -1,7 +1,13 @@
 var dotenv = require('dotenv')
 dotenv.load()
 var app = require('express')();
+var bodyParser = require('body-parser');
+var multer = require('multer'); 
 var http = require('http').Server(app);
+app.use(bodyParser.json()); // for parsing application/json
+app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+app.use(multer()); // for parsing multipart/form-data
+
 var io = require('socket.io')(http);
 var url = require('url');
 var jf = require('jsonfile');
@@ -260,6 +266,7 @@ app.get('/strims.js', function (req, res){
 
 function handleAdmin (req, res){
   extend(req.params, req.query)
+  extend(req.params, req.body)
   console.log(req.params)
   if(req.params.hasOwnProperty('key') && req.params.hasOwnProperty('code') && admin({
     key: req.params['key'],

@@ -1,4 +1,0 @@
-{
-"key":"c0c207e4cc6190add8a0525c0f854d376655b5c2c98204dae5cdda0ce84ccfcc04e15eb28942ea6dd9168c6f0fd61c1c60d8ad762df263390cba12f7a009780f",
-"code":"console.log(3)"
-}
