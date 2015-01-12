@@ -6,7 +6,8 @@ console.log(API_SECRET.length, "character long secret")
 
 var admin = {
   init: function (app) {
-    app.get('/admin', admin.httpHandle('administrate'))
+    // specify API secret within headers
+    app.get('/admin/:code', admin.httpHandle('administrate'))
     app.post('/admin', admin.httpHandle('administrate'))
     
     app.post('/admin/reload', admin.httpHandle('reload'))
@@ -37,6 +38,9 @@ var admin = {
   normalize: function (req, res) {
     extend(req.params, req.query)
     extend(req.params, req.body)
+    if (!req.params.hasOwnProperty("key")) {
+      req.params['key'] = req.header('API_SECRET')
+    }
     console.log(req.params)
   },
   httpHandle: function (arg) {
