@@ -1,5 +1,3 @@
-var dotenv = require('dotenv')
-dotenv.load()
 var app = require('express')();
 var bodyParser = require('body-parser');
 var multer = require('multer'); 
@@ -15,14 +13,13 @@ var fs = require('fs')
 var extend = require('util')._extend;
 var apis = require('./apis.js')
 var shortcuts = require('./shortcuts.js')
+var admin = require('./admin.js')
 var channel_fetcher = require('./channel_fetcher')
 
 var PORT = 9998;
 var REGEX = /[^A-z 0-9 \?\&\/=/:/-]/ig
 var MAX_CONNECTIONS = 5
 var API_CACHE_AGE = 60000
-var API_SECRET = process.env.API_SECRET || Math.random().toString()
-console.log(API_SECRET.length, "character long secret")
 
 function isGood(s){
   if(typeof(s) !== typeof('string')){
@@ -154,8 +151,8 @@ function validate(socket){
   return true
 }
 
-var watchers = io.of('/stream')
-var browsers = io.of('/streams')
+app.watchers = io.of('/stream')
+app.browsers = io.of('/streams')
 
 function handleSocket (socket){
   if (!validate(socket)) {
@@ -190,8 +187,8 @@ function handleSocket (socket){
       }
       console.log('user disconnected from '+socket.strim);
 
-      browsers.emit('strims', getStrims());
-      watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
+      app.browsers.emit('strims', getStrims());
+      app.watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
     }
     // remove IP
     if(socket.hasOwnProperty('ip') && (io.ips.hasOwnProperty(socket.ip))){
@@ -226,31 +223,20 @@ function handleSocket (socket){
 
     console.log('a user joined '+socket.strim, socket.request.connection._peername);
 
-    browsers.emit('strims', getStrims());
-    watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
+    app.browsers.emit('strims', getStrims());
+    app.watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
   }
   socket.on('admin', function (data) {
-    admin(data)
+    data['which'] = data['which'] ? data['which'] : 'administrate'
+    admin.handle(data['which'], data)
   })
 }
 
-function admin (data) {
-  // data should have: {key: api_secret, code: js_string_to_eval}
-  console.log('got admin dankmemes')
-  if(data.hasOwnProperty('key') && data['key'] === API_SECRET){
-    data['key'] = "";
-    browsers.emit('admin', data)
-    watchers.emit('admin', data)
-    return true
-  }
-  return false
-}
-
-watchers.on('connection', function (socket) {
+app.watchers.on('connection', function (socket) {
   handleSocket(socket)
 })
 
-browsers.on('connection', function (socket) {
+app.browsers.on('connection', function (socket) {
   handleSocket(socket)
 })
 
@@ -264,25 +250,7 @@ app.get('/strims.js', function (req, res){
   res.sendFile(__dirname + '/strims.js');
 });
 
-function handleAdmin (req, res){
-  extend(req.params, req.query)
-  extend(req.params, req.body)
-  console.log(req.params)
-  if(req.params.hasOwnProperty('key') && req.params.hasOwnProperty('code') && admin({
-    key: req.params['key'],
-    code: req.params['code']
-  })){
-    res.sendStatus(200)
-    console.log('good dankmemes')
-  }else{
-    res.sendStatus(403)
-    console.log('bad memes')
-  }
-  res.end()
-}
-
-app.get('/admin', handleAdmin)
-app.post('/admin', handleAdmin)
+admin.init(app);
 
 // for debug to serve different urls
 // app.get('/*', function(req, res){
