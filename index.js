@@ -114,7 +114,7 @@ var consider_metadata = function (strim_url) {
 
         // people on specific pages won't usually 
         // be listening for this event, so it's fine
-        browsers.emit('strims', getStrims());
+        app.browsers.emit('strims', getStrims());
         // cache meta data
         jf.writeFile(metadata_path, io.metadata, function(err) {
           if(err)
