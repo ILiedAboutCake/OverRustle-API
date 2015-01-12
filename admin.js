@@ -16,23 +16,20 @@ var admin = {
     app.post('/admin/redirect', admin.httpHandle('redirect'))
     app.post('/admin/punt', admin.httpHandle('redirect'))
     app.get('/admin/redirect/:to', admin.httpHandle('redirect'))
-    app.get('/admin/redirect/:who/:to', admin.httpHandle('redirect'))
+    app.get('/admin/redirect/:who/:to*', admin.httpHandle('redirect'))
     app.get('/admin/punt/:to', admin.httpHandle('redirect'))
-    app.get('/admin/punt/:who/:to', admin.httpHandle('redirect'))
+    app.get('/admin/punt/:who/:to*', admin.httpHandle('redirect'))
 
     app.post('/admin/notify', admin.httpHandle('notify'))
     app.get('/admin/notify/:message', admin.httpHandle('notify'))
-    app.get('/admin/notify/:who/:message', admin.httpHandle('notify'))
-
+    app.get('/admin/notify/:who/:message*', admin.httpHandle('notify'))
   },
   handle: function(which, data){
     var success = admin.validate({
       key: data['key']
     })
 
-    if (success) {
-      success = admin[which](data)
-    }
+    success = success ? admin[which](data) : success
 
     console.log((success ? 'good' : 'bad') + ' dankmemes')
     return success
