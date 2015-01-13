@@ -107,8 +107,7 @@ var admin = {
     if (data.hasOwnProperty('who') && data['who'] && data['who'] !== 'all') {
       data['code'] = "if (window.location.toString().toLowerCase().indexOf('"+
         data['who']+"')!==-1) {; "+
-        "window.location = 'api.overrustle.com/"+data['to']+"';"
-        "};"
+        "window.location = 'api.overrustle.com/"+data['to']+"';};"
     }
     admin.app.watchers.emit('admin', data)
     admin.app.browsers.emit('admin', data)
