@@ -1,11 +1,14 @@
 var dotenv = require('dotenv')
 dotenv.load()
 
+var extend = require('util')._extend;
 var API_SECRET = process.env.API_SECRET || Math.random().toString()
 console.log(API_SECRET.length, "character long secret")
 
 var admin = {
+  'app': null,
   init: function (app) {
+    admin.app = app
     // specify API secret within headers
     app.get('/admin/:code', admin.httpHandle('administrate'))
     app.post('/admin', admin.httpHandle('administrate'))
@@ -69,8 +72,8 @@ var admin = {
   administrate: function(data) {
     // data should have: {key: api_secret, code: js_string_to_eval}
     console.log('got admin dankmemes')
-    app.browsers.emit('admin', data)
-    app.watchers.emit('admin', data)
+    admin.app.browsers.emit('admin', data)
+    admin.app.watchers.emit('admin', data)
     return true
   },
   notify: function (data) {
@@ -89,6 +92,9 @@ var admin = {
       data['code'] += "};"
     }
     data['code'] += "});"
+
+    admin.app.browsers.emit('admin', data)
+    admin.app.watchers.emit('admin', data)
     return true
   },
   redirect: function (data) {
@@ -104,8 +110,8 @@ var admin = {
         "window.location = 'api.overrustle.com/"+data['to']+"';"
         "};"
     }
-    app.watchers.emit('admin', data)
-    app.browsers.emit('admin', data)
+    admin.app.watchers.emit('admin', data)
+    admin.app.browsers.emit('admin', data)
     return true
   },
   reload: function (data) {
@@ -115,7 +121,7 @@ var admin = {
       data['code'] = "if (window.location.toString().toLowerCase().indexOf('"+
         data['who']+"')!==-1) {; window.location.reload();};"
     }
-    app.watchers.emit('admin', data)
+    admin.app.watchers.emit('admin', data)
     // reloading browsers is pointless
     return true
   }
