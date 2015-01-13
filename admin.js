@@ -129,6 +129,9 @@ var admin = {
     }
 
     var mk = shortcuts.expand(data['who'])
+    if (admin.app.socketio.metadata.hasOwnProperty(mk) === false) {
+      return false
+    }
     var md = admin.app.socketio.metadata[mk]
 
     admin.app.watchers.emit('featured_live', md)
