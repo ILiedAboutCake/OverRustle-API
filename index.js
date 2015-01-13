@@ -7,6 +7,9 @@ app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x
 app.use(multer()); // for parsing multipart/form-data
 
 var io = require('socket.io')(http);
+// share a reference
+app.socketio = io;
+
 var url = require('url');
 var jf = require('jsonfile');
 var fs = require('fs')

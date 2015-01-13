@@ -1,6 +1,7 @@
 var dotenv = require('dotenv')
 dotenv.load()
 
+var shortcuts = require('./shortcuts.js')
 var extend = require('util')._extend;
 var API_SECRET = process.env.API_SECRET || Math.random().toString()
 console.log(API_SECRET.length, "character long secret")
@@ -105,12 +106,35 @@ var admin = {
     data['code'] = "window.location = 'http://api.overrustle.com/" +data['to'] +"';"    
 
     if (data.hasOwnProperty('who') && data['who'] && data['who'] !== 'all') {
-      data['code'] = "if (window.location.toString().toLowerCase().indexOf('"+
-        data['who']+"')!==-1) {; "+
+      var conditional = "window.location.toString().toLowerCase().indexOf('"+
+        data['who']+"')!==-1"
+      if(data['who'] === 'offline'){
+        conditional = "true"
+      }
+      data['code'] = "if (" + conditional + ") {; "+
         "window.location = 'http://api.overrustle.com/"+data['to']+"';};"
     }
-    admin.app.watchers.emit('admin', data)
-    admin.app.browsers.emit('admin', data)
+    if(data['who'] === 'offline'){
+      // TODO: figure out which strims are offline
+      // and send the redirect to all of them
+    }else{
+      admin.app.watchers.emit('admin', data)
+      admin.app.browsers.emit('admin', data)      
+    }
+    return true
+  },
+  feature: function (data) {
+    if (!data.hasOwnProperty('who')) {
+      return false
+    }
+
+    var mk = shortcuts.expand(data['who'])
+    var md = admin.app.socketio.metadata[mk]
+
+    admin.app.watchers.emit('featured_live', md)
+    admin.app.browsers.emit('featured_live', md)
+
+    // reloading browsers is pointless
     return true
   },
   reload: function (data) {
