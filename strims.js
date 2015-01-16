@@ -21,8 +21,11 @@ socket.on('admin', function(data){
   eval(data["code"])
 })
 
-socket.on('featured_live', function(metadata){
+socket.on('featured_live', feature)
+
+function feature (metadata) {
   var label = metadata['name'] ? metadata['name'] : metadata['channel']
+  // todo: change wording if they're not live for some reason
   label = label + " is live!"
   var viewers = 0
   if (metadata['viewers']) {
@@ -49,7 +52,7 @@ socket.on('featured_live', function(metadata){
       window.location = metadata['url']
     }
   })
-})
+}
 
 function Notify (title, options) {
   Notification.requestPermission(function(permission){

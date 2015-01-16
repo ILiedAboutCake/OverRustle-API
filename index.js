@@ -117,7 +117,7 @@ var consider_metadata = function (strim_url) {
 
         // people on specific pages won't usually 
         // be listening for this event, so it's fine
-        app.browsers.emit('strims', getStrims());
+        browsers.emit('strims', getStrims());
         // cache meta data
         jf.writeFile(metadata_path, io.metadata, function(err) {
           if(err)
@@ -154,8 +154,11 @@ function validate(socket){
   return true
 }
 
-app.watchers = io.of('/stream')
-app.browsers = io.of('/streams')
+var watchers = io.of('/stream')
+var browsers = io.of('/streams')
+// cache a reference
+app.watchers = watchers
+app.browsers = browsers
 
 function handleSocket (socket){
   if (!validate(socket)) {
@@ -190,8 +193,8 @@ function handleSocket (socket){
       }
       console.log('user disconnected from '+socket.strim);
 
-      app.browsers.emit('strims', getStrims());
-      app.watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
+      browsers.emit('strims', getStrims());
+      watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
     }
     // remove IP
     if(socket.hasOwnProperty('ip') && (io.ips.hasOwnProperty(socket.ip))){
@@ -226,8 +229,8 @@ function handleSocket (socket){
 
     console.log('a user joined '+socket.strim, socket.request.connection._peername);
 
-    app.browsers.emit('strims', getStrims());
-    app.watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
+    browsers.emit('strims', getStrims());
+    watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
   }
   socket.on('admin', function (data) {
     data['which'] = data['which'] ? data['which'] : 'administrate'
@@ -235,11 +238,11 @@ function handleSocket (socket){
   })
 }
 
-app.watchers.on('connection', function (socket) {
+watchers.on('connection', function (socket) {
   handleSocket(socket)
 })
 
-app.browsers.on('connection', function (socket) {
+browsers.on('connection', function (socket) {
   handleSocket(socket)
 })
 
