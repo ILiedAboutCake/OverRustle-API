@@ -27,19 +27,17 @@ socket.on('featured_live.'+path, feature)
 function feature (metadata) {
   var label = metadata['name'] ? metadata['name'] : metadata['channel']
   // todo: change wording if they're not live for some reason
-  label = label + " is live!"
-  var viewers = 0
-  if (metadata['viewers']) {
-    viewers += metadata['viewers']
-  }
-  if (metadata['rustlers']) {
-    viewers += metadata['rustlers']
-  }
-  var body = "Click To Watch"
-  if (viewers > 0) {
-    body = body + " with " + viewers + " viewers."
+  if (metadata['live']) {
+    label = label + " is live!"
   }else{
-    body = body + " Now."
+    label = "Check out " + label
+  }
+
+  var body = "Click To Watch"
+  if (metadata['rustlers']) {
+    body = body + " with " + metadata['rustlers'] + " rustlers."
+  }else if (metadata['viewers']) {
+    body = body + " with " + metadata['viewers'] + " viewers."
   }
 
   Notify(label, {
@@ -56,7 +54,7 @@ function feature (metadata) {
 }
 
 function Notify (title, options) {
-  Notification.requestPermission(function(permission){
+  Notification.requestPermission( function (permission){
     var n = new Notification(title, options)
     n.onclick = options['onclick']
     n.onerror = options['onerror']
