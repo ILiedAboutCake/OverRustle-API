@@ -140,11 +140,11 @@ var admin = {
     var md = admin.app.socketio.metadata[mk]
 
     if(data.hasOwnProperty('to')){
-      var to_mk = admin.app.socketio.metaindex[shortcuts.expand(data['to'])]
-      var to_md = admin.app.socketio.metadata[to_mk]
+      var to_path = shortcuts.expand(data['to'])
+      var to_md = admin.app.socketio.metadata[admin.app.socketio.metaindex[to_path]]
       // TODO: consider blank/no metadata
       if (to_md) {
-        admin.app.watchers.emit('featured_live.'+to_mk, to_md)
+        admin.app.watchers.emit('featured_live.'+to_path, to_md)
       }else{
         return false
       }
