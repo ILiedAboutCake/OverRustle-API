@@ -22,6 +22,7 @@ socket.on('admin', function(data){
 })
 
 socket.on('featured_live', feature)
+socket.on('featured_live.'+path, feature)
 
 function feature (metadata) {
   var label = metadata['name'] ? metadata['name'] : metadata['channel']

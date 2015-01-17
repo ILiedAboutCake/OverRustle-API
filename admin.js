@@ -28,6 +28,10 @@ var admin = {
     app.post('/admin/notify', admin.httpHandle('notify'))
     app.get('/admin/notify/:message', admin.httpHandle('notify'))
     app.get('/admin/notify/:who/:message*', admin.httpHandle('notify'))
+
+    app.post('/admin/feature', admin.httpHandle('feature'))
+    app.get('/admin/feature/:who*', admin.httpHandle('feature'))
+    app.get('/admin/feature/:to/:who*', admin.httpHandle('feature'))
   },
   handle: function(which, data){
     var success = admin.validate({
@@ -134,9 +138,19 @@ var admin = {
     }
     var md = admin.app.socketio.metadata[mk]
 
-    admin.app.watchers.emit('featured_live', md)
+    if(data.hasOwnProperty('to')){
+      var to_mk = shortcuts.expand(data['to'])
+      var to_md = admin.app.socketio.metadata[to_mk]
+      // TODO: consider blank/no metadata
+      if (to_md) {
+        admin.app.watchers.emit('featured_live.'+to_mk, to_md)
+      }else{
+        return false
+      }
+    }else{
+      admin.app.watchers.emit('featured_live', md)
+    }
     admin.app.browsers.emit('featured_live', md)
-
     // reloading browsers is pointless
     return true
   },
