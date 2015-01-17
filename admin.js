@@ -139,18 +139,10 @@ var admin = {
     }
     var md = admin.app.socketio.metadata[mk]
 
-    if(data.hasOwnProperty('to')){
-      var to_path = shortcuts.expand(data['to'])
-      var to_md = admin.app.socketio.metadata[admin.app.socketio.metaindex[to_path]]
-      // TODO: consider blank/no metadata
-      if (to_md) {
-        admin.app.watchers.emit('featured_live.'+to_path, to_md)
-      }else{
-        return false
-      }
-    }else{
-      admin.app.watchers.emit('featured_live', md)
-    }
+    // append a `to` filter if specified
+    var to_who = data.hasOwnProperty('to') ? "."+shortcuts.expand(data['to']) : ""
+
+    admin.app.watchers.emit('featured_live'+to_who, md)
     admin.app.browsers.emit('featured_live', md)
     // reloading browsers is pointless
     return true
