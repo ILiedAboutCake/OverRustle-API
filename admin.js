@@ -132,15 +132,15 @@ var admin = {
       return false
     }
 
-    var mk = shortcuts.expand(data['who'])
-    console.log(mk)
+    var mk = admin.app.socketio.metaindex[shortcuts.expand(data['who'])]
+
     if (admin.app.socketio.metadata.hasOwnProperty(mk) === false) {
       return false
     }
     var md = admin.app.socketio.metadata[mk]
 
     if(data.hasOwnProperty('to')){
-      var to_mk = shortcuts.expand(data['to'])
+      var to_mk = admin.app.socketio.metaindex[shortcuts.expand(data['to'])]
       var to_md = admin.app.socketio.metadata[to_mk]
       // TODO: consider blank/no metadata
       if (to_md) {
