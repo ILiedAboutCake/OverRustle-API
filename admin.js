@@ -133,6 +133,7 @@ var admin = {
     }
 
     var mk = shortcuts.expand(data['who'])
+    console.log(mk)
     if (admin.app.socketio.metadata.hasOwnProperty(mk) === false) {
       return false
     }
