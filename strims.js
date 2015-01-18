@@ -25,6 +25,13 @@ socket.on('featured_live', feature)
 socket.on('featured_live.'+path, feature)
 
 function feature (metadata) {
+  // don't bother people if they're already looking at a specific stream
+  // this could be solved on the backend
+  // with separate namespaces per stream
+  // and then NOT sending to this namespace
+  if(path === metadata['url']){
+    return
+  }
   var label = metadata['name'] ? metadata['name'] : metadata['channel']
   // todo: change wording if they're not live for some reason
   if (metadata['live']) {
