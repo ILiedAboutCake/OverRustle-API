@@ -97,7 +97,11 @@ var apis = {
           api_data.image_url = "http://img.youtube.com/vi/"+api_data.channel+"/maxresdefault.jpg"
           // for some reason the default is ugly, so don't use it
           // api_data.image_url = json.entry['media$group']['media$thumbnail'][0]['url'];
-          api_data.viewers = parseInt(json.entry['yt$statistics']['viewCount'], 10);
+          api_data.viewers = 0
+          // because sometimes youtube gives us bad data...
+          if (json.entry.hasOwnProperty('yt$statistics') && json.entry['yt$statistics'].hasOwnProperty('viewCount')) {
+            api_data.viewers = parseInt(json.entry['yt$statistics']['viewCount'], 10)
+          }
           api_data.title = json.entry.title['$t'];
         }else{
           api_data.image_url = apis.getPlaceholder('youtube')
