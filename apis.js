@@ -5,7 +5,7 @@ var apis = {
   DEFAULT_PLACEHOLDER: "http://overrustle.com/img/jigglymonkey.gif",
   // TODO add placeholders for each individual platform
   PLACEHOLDERS: {
-
+    "mlg": "http://s3.amazonaws.com/s3.majorleaguegaming.com/tv-category-icons/image_16_9s/95/medium/comingsoon.jpg?1390332269"
   },
   STREAMING_APIS: {
     // TODO: get stream TITLE
@@ -81,6 +81,27 @@ var apis = {
           api_data.title = _stream.title;
         }else{
           api_data.image_url = apis.getPlaceholder('azubu')
+        }
+        callback(api_data);
+      })
+    },
+    mlg: function (api_data, error_callback, callback) {
+      // undocumented API's ayy lmao
+      // no way to request data for a specific stream
+      return request.get({json:true, uri:"http://www.majorleaguegaming.com/api/channels/all.js?fields=id,name,slug,subtitle,stream_name,image_16_9_medium,description"}, function (e, r, res) {
+        if(e)
+          return error_callback(e)
+        var json = res
+        api_data.live = r.statusCode < 400 && json.data.items.length > 0
+        // console.log("Got response: " + res.statusCode);
+        if(api_data.live){
+          var _stream = json.data[0].user.channel
+          // TODO: maybe get their offline image?
+          api_data.image_url = _stream.url_thumbnail;
+          api_data.viewers = parseInt(_stream.view_count, 10);
+          api_data.title = _stream.title;
+        }else{
+          api_data.image_url = apis.getPlaceholder('mlg')
         }
         callback(api_data);
       })
