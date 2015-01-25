@@ -31,7 +31,7 @@ function isGood(s){
   if(s.length === 0){
     return false
   }
-  if(/s=(twitch|hitbox)/gi.test(s)){
+  if(/s=(twitch|hitbox|mlg)/gi.test(s)){
     s = s.toLowerCase()
   }
   var parts = s.split('/')
