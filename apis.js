@@ -5,11 +5,31 @@ var apis = {
   DEFAULT_PLACEHOLDER: "http://overrustle.com/img/jigglymonkey.gif",
   // TODO add placeholders for each individual platform
   PLACEHOLDERS: {
+    "picarto": "https://www.picarto.tv/img/thumbnail_stream_default.png",
     "mlg": "http://s3.amazonaws.com/s3.majorleaguegaming.com/tv-category-icons/image_16_9s/95/medium/comingsoon.jpg?1390332269"
   },
   STREAMING_APIS: {
     // TODO: get stream TITLE
     // TODO: return a promise object, instead of nasty callbacks
+    // vods ARE case sensitive
+    "twitch-vod": function (api_data, error_callback, callback) {
+      return request.get({json:true, uri:"https://api.twitch.tv/kraken/videos/"+api_data.channel}, function (e, r, res) {
+        if(e)
+          return error_callback(e)
+        var json = res
+        api_data.live = r.statusCode < 400
+        // console.log("Got response: " + res.statusCode);
+        if(api_data.live){
+          // raise an error?
+          api_data.image_url = json.preview;
+          api_data.viewers = parseInt(json.views, 10);
+          api_data.title = json.title;
+        }else{
+          api_data.image_url = apis.getPlaceholder('twitch-vod')
+        }
+        callback(api_data)
+      })
+    },
     twitch: function (api_data, error_callback, callback) {
       return request.get({json:true, uri:"https://api.twitch.tv/kraken/streams/"+api_data.channel}, function (e, r, res) {
         if(e)
@@ -81,6 +101,29 @@ var apis = {
           api_data.title = _stream.title;
         }else{
           api_data.image_url = apis.getPlaceholder('azubu')
+        }
+        callback(api_data);
+      })
+    },
+    picarto: function (api_data, error_callback, callback) {
+      // undocumented API's ayy lmao
+      return request.get({uri:"https://www.picarto.tv/channel_img/"+api_data.channel.toLowerCase()+"/thumbnail_stream.png"}, function (e, r, res) {
+        if(e)
+          return error_callback(e)
+        // picarto has no real API. RIP
+        // var json = res
+        api_data.live = r.statusCode < 400 && r.headers['content-type'].indexOf("image")
+        // console.log("Got response: " + res.statusCode);
+        if(api_data.live){
+          var _stream = json.data[0].user.channel
+          api_data.image_url = "https://www.picarto.tv/channel_img/"+api_data.channel.toLowerCase()+"/thumbnail_stream.png"          
+          // TODO: scrape the page directly if we really want to 
+          // implement full support for them
+          // "https://www.picarto.tv/live/channel.php?watch="+api_data.channel
+          api_data.viewers = 0
+          api_data.title = api_data.channel
+        }else{
+          api_data.image_url = "https://www.picarto.tv/img/offlinestreamer.png"
         }
         callback(api_data);
       })
