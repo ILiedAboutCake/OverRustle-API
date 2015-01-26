@@ -121,6 +121,8 @@ var apis = {
             return
           }
           api_data.viewers = parseInt(json.data.viewers, 10)
+          // -1 is offline, 1 is live, 2 is replay
+          api_data.live = json.data.status == 1
           callback(api_data);
         })
       })
