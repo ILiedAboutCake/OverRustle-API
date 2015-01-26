@@ -94,16 +94,35 @@ var apis = {
         var json = res
         api_data.live = r.statusCode < 400 && json.data.items.length > 0
         // console.log("Got response: " + res.statusCode);
-        if(api_data.live){
-          var _stream = json.data[0].user.channel
-          // TODO: maybe get their offline image?
-          api_data.image_url = _stream.url_thumbnail;
-          api_data.viewers = parseInt(_stream.view_count, 10);
-          api_data.title = _stream.title;
-        }else{
-          api_data.image_url = apis.getPlaceholder('mlg')
+        api_data.image_url = apis.getPlaceholder('mlg')
+        if (!api_data.live) {
+          callback(api_data);
+          return
         }
-        callback(api_data);
+        var _stream = null;
+        for (var i = json.data.items.length - 1; i >= 0; i--) {
+          if(api_data.channel.toLowerCase() == json.data.items[i]["slug"].toLowerCase()){
+            _stream = json.data.items[i]
+            break
+          }
+        }
+        if (!_stream) {
+          callback(api_data);
+          return
+        }
+        api_data.image_url = _stream.image_16_9_medium
+        api_data.title = _stream.subtitle
+        request.get({json:true, uri: "http://streamapi.majorleaguegaming.com/service/streams/status/"+_stream.stream_name}, function (e, r, res) {
+          if(e)
+            return error_callback(e)
+          var json = res
+          if (r.statusCode >= 400 || !json.data.hasOwnProperty('viewers')) {
+            callback(api_data)
+            return
+          }
+          api_data.viewers = parseInt(json.data.viewers, 10)
+          callback(api_data);
+        })
       })
     },
     // https://gdata.youtube.com/feeds/api/videos/z18NGK1H8n8?v=2&alt=json
