@@ -17,7 +17,7 @@ var apis = {
         if(e)
           return error_callback(e)
         var json = res
-        api_data.live = r.statusCode < 400
+        api_data.live = r.statusCode < 400 && json.hasOwnProperty('status') && json['status'] !== 404
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
           // raise an error?
