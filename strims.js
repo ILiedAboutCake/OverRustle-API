@@ -11,7 +11,7 @@ if(/s=(twitch|hitbox|mlg)/gi.test(path)){
 }
 
 socket.on('strim.'+path, function(viewers){
-  $('#server-broadcast').html(viewers); // not using formatNumber
+  $('#server-broadcast').html(viewers + " Rustlers"); // not using formatNumber
   // $('#server-broadcast').text(JSON.stringify(api_data)); // not using formatNumber
 });
 
