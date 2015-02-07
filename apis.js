@@ -115,7 +115,6 @@ var apis = {
         api_data.live = r.statusCode < 400 && r.headers['content-type'].indexOf("image")
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
-          var _stream = json.data[0].user.channel
           api_data.image_url = "https://www.picarto.tv/channel_img/"+api_data.channel.toLowerCase()+"/thumbnail_stream.png"          
           // TODO: scrape the page directly if we really want to 
           // implement full support for them
