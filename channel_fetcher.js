@@ -4,6 +4,10 @@ var redis_db = 1
 var client = require('redis').createClient(6379, redis_host, {})
 var extend = require('util')._extend;
 // TODO: cache
+client.on('error', function (er) {
+  console.trace('Channel_fetcher') // [1]
+  console.error(er.stack) // [2]
+})
 
 module.exports = function (metadata, callback) {
   var channel_name = metadata['name']
