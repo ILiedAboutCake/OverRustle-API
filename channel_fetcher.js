@@ -1,5 +1,5 @@
 // TODO: make this more modular
-var redis_host = '172.16.5.254'
+var redis_host = '127.0.0.1'
 var redis_db = 1
 var client = require('redis').createClient(6379, redis_host, {})
 var extend = require('util')._extend;
