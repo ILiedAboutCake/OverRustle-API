@@ -6,7 +6,8 @@ var apis = {
   // TODO add placeholders for each individual platform
   PLACEHOLDERS: {
     "picarto": "https://www.picarto.tv/img/thumbnail_stream_default.png",
-    "mlg": "http://s3.amazonaws.com/s3.majorleaguegaming.com/tv-category-icons/image_16_9s/95/medium/comingsoon.jpg?1390332269"
+    "mlg": "http://s3.amazonaws.com/s3.majorleaguegaming.com/tv-category-icons/image_16_9s/95/medium/comingsoon.jpg?1390332269",
+    "nsfw-chaturbate": "http://i.imgur.com/x7iCWRe.jpg"
   },
   STREAMING_APIS: {
     // TODO: get stream TITLE

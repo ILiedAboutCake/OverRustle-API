@@ -9,6 +9,7 @@ var shortcuts = {
     'y':'youtube',
     'l':'youtube-playlist',
     'm':'mlg',
+    'n':'nsfw-chaturbate',
     'u':'ustream',
     'd':'dailymotion',
     'a':'azubu',
