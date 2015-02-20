@@ -170,6 +170,32 @@ var apis = {
         })
       })
     },
+    "nsfw-chaturbate": function (api_data, error_callback, callback) {
+      // undocumented API's ayy lmao
+      // stevenbonnellii.jpg
+      // could be scraping from normal HTML pages if we want
+      // full implementation
+      var test_nc_uri = "https://ssl-cdn.highwebmedia.com/roomimage/"+api_data.channel.toLowerCase()+".jpg"
+      return request.get({uri:test_nc_uri}, function (e, r, res) {
+        if(e)
+          return error_callback(e)
+        // picarto has no real API. RIP
+        // var json = res
+        api_data.live = r.statusCode < 400 && r.headers['content-type'].indexOf("image")
+        // console.log("Got response: " + res.statusCode);
+        if(api_data.live){
+          api_data.image_url = this.uri.href;
+          // TODO: scrape the page directly if we really want to 
+          // implement full support for them
+          // "https://www.picarto.tv/live/channel.php?watch="+api_data.channel
+          api_data.viewers = 0
+          api_data.title = api_data.channel
+        }else{
+          api_data.image_url = "https://ssl-cdn.highwebmedia.com/roomimage/offline.jpg"
+        }
+        callback(api_data);
+      })
+    },
     // https://gdata.youtube.com/feeds/api/videos/z18NGK1H8n8?v=2&alt=json
     youtube: function (api_data, error_callback, callback) {
       return request.get({json:true, uri:"https://gdata.youtube.com/feeds/api/videos/"+api_data.channel+"?v=2&alt=json"}, function (e, r, res) {
