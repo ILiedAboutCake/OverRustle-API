@@ -34,9 +34,7 @@ var admin = {
     app.get('/admin/feature/:to/:who*', admin.httpHandle('feature'))
   },
   handle: function(which, data){
-    var success = admin.validate({
-      key: data['key']
-    })
+    var success = admin.validate(data)
 
     success = success ? admin[which](data) : success
 
@@ -75,7 +73,8 @@ var admin = {
   // and just calling them from remote code
   // 
   administrate: function(data) {
-    // data should have: {key: api_secret, code: js_string_to_eval}
+    // data should have: {key: "", code: js_string_to_eval}
+    // key should not be transmitted to clients
     console.log('got admin dankmemes')
     admin.app.browsers.emit('admin', data)
     admin.app.watchers.emit('admin', data)
