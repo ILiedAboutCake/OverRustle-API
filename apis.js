@@ -171,25 +171,18 @@ var apis = {
       })
     },
     "nsfw-chaturbate": function (api_data, error_callback, callback) {
-      // undocumented API's ayy lmao
-      // stevenbonnellii.jpg
-      // could be scraping from normal HTML pages if we want
-      // full implementation
-      var test_nc_uri = "https://ssl-cdn.highwebmedia.com/roomimage/"+api_data.channel.toLowerCase()+".jpg"
-      return request.get({uri:test_nc_uri}, function (e, r, res) {
+      return request.get({uri:"https://chaturbate.com/contest/log_presence/"+api_data.channel.toLowerCase()+"/"}, function (e, r, res) {
         if(e)
           return error_callback(e)
-        // picarto has no real API. RIP
-        // var json = res
-        api_data.live = r.statusCode < 400 && r.headers['content-type'].indexOf("image")
+        var json = res
+        api_data.live = r.statusCode < 300 && parseInt(json.total_viewers, 10) == 0;
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
-          api_data.image_url = this.uri.href;
-          // TODO: scrape the page directly if we really want to 
-          // implement full support for them
-          // "https://www.picarto.tv/live/channel.php?watch="+api_data.channel
-          api_data.viewers = 0
-          api_data.title = api_data.channel
+          api_data.image_url = json.image_url;
+          api_data.viewers = parseInt(json.total_viewers, 10);
+          // title could be scraped from the page, 
+          // not used right now, so we're not using it
+          api_data.title = api_data.channel;
         }else{
           api_data.image_url = "https://ssl-cdn.highwebmedia.com/roomimage/offline.jpg"
         }
