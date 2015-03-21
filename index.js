@@ -71,7 +71,13 @@ function getStrims () {
     }, 0),
     'streams' : io.strims,
     'idlers' : io.idlers,
-    'metadata' : io.metadata,
+    'metadata' : function(){
+      // this is probably not a good place to do this
+      for(var skey in io.metadata){
+        io.metadata[skey].rustlers = io.strims[io.metadata[skey]['url']] || 0
+      }
+      return io.metadata
+    }(),
     'metaindex': io.metaindex
   }
 }
@@ -97,7 +103,7 @@ var consider_metadata = function (strim_url) {
   return function (md) {
     var meta_key = md['platform']+'/'+md['channel']
     console.log('considering metadata', meta_key)
-    if(!io.metadata.hasOwnProperty(meta_key) || io.metadata[meta_key].expire_at < (new Date).getTime()){
+    if(!io.metadata.hasOwnProperty(meta_key) || (io.metadata[meta_key].expire_at < (new Date).getTime())){
       md.image_url = apis.getPlaceholder(md.platform);
       md.expire_at = (new Date).getTime()+API_CACHE_AGE;
       // todo: decide whether we should set
