@@ -133,8 +133,9 @@ var apis = {
     // http://xjudge-judyx.api.channel.livestream.com/2.0/widgetinfo.json
     livestream: function (api_data, error_callback, callback) {
       // undocumented API's ayy lmao
-      return request.get({uri:"http://x"+api_data.channel.toLowerCase().replace(/_/gi, '-')+
-        "x.api.channel.livestream.com/2.0/widgetinfo.json&cachebuster=" + new Date().valueOf()}, function (e, r, res) {
+      return request.get({json:true, 
+        uri:"http://x"+api_data.channel.toLowerCase().replace(/_/gi, '-')+
+        "x.api.channel.livestream.com/2.0/widgetinfo.json&cachebuster="+(new Date().valueOf())}, function (e, r, res) {
         if(e)
           return error_callback(e)
         // console.log("Got response: " + res.statusCode);
