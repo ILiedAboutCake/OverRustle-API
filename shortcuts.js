@@ -3,27 +3,35 @@ var url = require('url')
 var shortcuts = {
   list: {
     't':'twitch',
-    'v':'twitch-vod',
+    // 'v':'twitch-vod',
+    'tv':'twitch-vod',
     'c':'castamp',
     'h':'hitbox',
     'y':'youtube',
-    'l':'youtube-playlist',
+    // 'l':'youtube-playlist',
+    'yl':'youtube-playlist',
     'm':'mlg',
-    'n':'nsfw-chaturbate',
+    // 'n':'nsfw-chaturbate',
+    'nsfw-c':'nsfw-chaturbate',
     'u':'ustream',
+    'l':'livestream',
     'd':'dailymotion',
     'a':'azubu',
     'p':'picarto'
   },
   expand: function (raw_path) {
-    if (raw_path[1] === '/') {
+    var parts = raw_path.split('/')
+    if (parts.length > 1) {
       return "/destinychat?s="+
-        shortcuts.list[raw_path[0]]+"&stream="+raw_path.substring(2)
+        shortcuts.list[parts[0]]+"&stream="+parts[2]
     }else{
       return "/channel?user="+raw_path
     }
   },
   init:function (app) {
+    app.get('/shortcuts.json', function(req, res){
+      res.json(shortcuts.list)
+    })
     app.get('/', function (req, res) {
       var redirect_to = 'http://overrustle.com/strims'
       console.log('redirecting to: '+redirect_to);
