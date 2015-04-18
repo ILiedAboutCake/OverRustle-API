@@ -59,6 +59,37 @@ function isIdle (s) {
 }
 
 function getStrims () {
+  // this is probably not a good place to do this
+  for(var skey in io.metadata){
+    io.metadata[skey].rustlers = io.strims[io.metadata[skey]['url']] || 0
+  }
+
+  // clump streams into live first, then offline
+  var sorted_streams = {}
+  // add live streams
+  for(var strim in io.strims){
+    if (io.metaindex.hasOwnProperty(strim)) {
+      var mk = io.metaindex[strim]
+      if (io.metadata.hasOwnProperty(mk)) {
+        var md = io.metadata[mk]
+        if(md.live){
+          sorted_streams[strim] = io.strims[strim]
+        }
+      }
+    }
+  }
+  // add offline streams
+  for(var strim in io.strims){
+    if (io.metaindex.hasOwnProperty(strim)) {
+      var mk = io.metaindex[strim]
+      if (io.metadata.hasOwnProperty(mk)) {
+        var md = io.metadata[mk]
+        if(!md.live){
+          sorted_streams[strim] = io.strims[strim]
+        }
+      }
+    }
+  }
   return {
     'viewercount' : Object.keys(io.strims).reduce(function (previous, key) {
       return previous + io.strims[key];
@@ -69,15 +100,9 @@ function getStrims () {
     'connections' : Object.keys(io.ips).reduce(function (previous, key) {
       return previous + io.ips[key];
     }, 0),
-    'streams' : io.strims,
+    'streams' : sorted_streams,
     'idlers' : io.idlers,
-    'metadata' : function(){
-      // this is probably not a good place to do this
-      for(var skey in io.metadata){
-        io.metadata[skey].rustlers = io.strims[io.metadata[skey]['url']] || 0
-      }
-      return io.metadata
-    }(),
+    'metadata' : io.metadata,
     'metaindex': io.metaindex
   }
 }
