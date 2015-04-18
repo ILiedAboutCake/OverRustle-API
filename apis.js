@@ -140,7 +140,7 @@ var apis = {
           return error_callback(e)
         // console.log("Got response: " + res.statusCode);
         var json = res;
-        api_data.live = (r.statusCode < 400) && res.hasOwnProperty("channel") && (parseInt(res['channel']['currentViewerCount'], 10) > 0)
+        api_data.live = (r.statusCode < 400) && json.hasOwnProperty("channel") && (parseInt(json['channel']['currentViewerCount'], 10) > 0)
         // NOTE: if a stream is playing from replays, it will behave normally on desktop,
         // but they don't provide a m3u8 stream when it's playing from replays
         if(api_data.live){
