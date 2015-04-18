@@ -1,3 +1,4 @@
+var http = require("http")
 var request = require('request');
 var extend = require('util')._extend;
 
@@ -129,30 +130,65 @@ var apis = {
         callback(api_data);
       })
     },
-    // http://thumbnail.api.livestream.com/thumbnail?name=judge_judy
-    // http://xjudge-judyx.api.channel.livestream.com/2.0/widgetinfo.json
+    // http://xjudge-judyx.api.channel.livestream.com/2.0/widgetinfo.json?cachebuster=1429393784212
     livestream: function (api_data, error_callback, callback) {
       // undocumented API's ayy lmao
-      return request.get({json:true, 
-        uri:"http://x"+api_data.channel.toLowerCase().replace(/_/gi, '-')+
-        "x.api.channel.livestream.com/2.0/widgetinfo.json&cachebuster="+(new Date().valueOf())}, function (e, r, res) {
-        if(e)
-          return error_callback(e)
-        // console.log("Got response: " + res.statusCode);
-        var json = res;
-        api_data.live = (r.statusCode < 400) && json.hasOwnProperty("channel") && (parseInt(json['channel']['currentViewerCount'], 10) > 0)
-        // NOTE: if a stream is playing from replays, it will behave normally on desktop,
-        // but they don't provide a m3u8 stream when it's playing from replays
-        if(api_data.live){
-          // TODO: maybe get their offline image?
-          api_data.image_url = "http://thumbnail.api.livestream.com/thumbnail?name="+api_data.channel.toLowerCase(); 
-          api_data.viewers = parseInt(json.channel.currentViewerCount, 10);
-          api_data.title = json.channel.title;
-        }else{
-          api_data.image_url = apis.getPlaceholder('livestream')
-        }
-        callback(api_data);
+      var lvuri = "http://x"+api_data.channel.toLowerCase().replace(/_/gi, '-')+"x.api.channel.livestream.com/2.0/widgetinfo.json?cachebuster="+(new Date().valueOf());
+      // console.log("doing livestream", lvuri)
+      return http.get(lvuri, function(r) {
+        // Continuously update stream with data
+        var body = '';
+        r.on('data', function(d) {
+          body += d;
+        });
+        r.on('end', function() {
+          // Data reception is done, do whatever with it!
+          // console.log("Status Code", r.statusCode)
+          if (r.statusCode < 400) {
+            var json = JSON.parse(body);
+            // console.log("Got JSON", json)
+          }
+          api_data.live = (r.statusCode < 400) && json.hasOwnProperty("channel") && (parseInt(json['channel']['currentViewerCount'], 10) > 0)
+          // NOTE: if a stream is playing from replays, it will behave normally on desktop,
+          // but they don't provide a m3u8 stream when it's playing from replays
+          if(api_data.live){
+            // TODO: maybe get their offline image?
+            api_data.image_url = "http://thumbnail.api.livestream.com/thumbnail?name="+api_data.channel.toLowerCase(); 
+            api_data.viewers = parseInt(json.channel.currentViewerCount, 10);
+            api_data.title = json.channel.title;
+          }else{
+            api_data.image_url = apis.getPlaceholder('livestream')
+          }
+          callback(api_data);
+        });
+      }).on('error', function(e) {
+        console.log("Host:", mhost)
+        console.log("Error: " + e.message);
+        console.log(e.stack)
+        error_callback(e)
       })
+      // request.js does not work here for some reason. 
+      // It always returns 404s.
+      // I don't know the why it does that.
+
+      // return request.get({json: true, uri: lvuri}, function (e, r, res) {
+      //   if(e)
+      //     return error_callback(e)
+      //   console.log("Got response: " + r.statusCode, r.headers, lvuri);
+      //   var json = res;
+      //   api_data.live = (r.statusCode < 400) && json.hasOwnProperty("channel") && (parseInt(json['channel']['currentViewerCount'], 10) > 0)
+      //   // NOTE: if a stream is playing from replays, it will behave normally on desktop,
+      //   // but they don't provide a m3u8 stream when it's playing from replays
+      //   if(api_data.live){
+      //     // TODO: maybe get their offline image?
+      //     api_data.image_url = "http://thumbnail.api.livestream.com/thumbnail?name="+api_data.channel.toLowerCase(); 
+      //     api_data.viewers = parseInt(json.channel.currentViewerCount, 10);
+      //     api_data.title = json.channel.title;
+      //   }else{
+      //     api_data.image_url = apis.getPlaceholder('livestream')
+      //   }
+      //   callback(api_data);
+      // })
     },
     mlg: function (api_data, error_callback, callback) {
       // undocumented API's ayy lmao

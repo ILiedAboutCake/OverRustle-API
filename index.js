@@ -86,6 +86,10 @@ io.strims = {}
 var metadata_path = './cache/metadata.json'
 var metaindex_path = './cache/metaindex.json'
 
+if(!fs.existsSync("./cache")){
+  fs.mkdirSync("./cache")
+}
+
 if (fs.existsSync(metadata_path)) {
   io.metadata = jf.readFileSync(metadata_path)
 }else{

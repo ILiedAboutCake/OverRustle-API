@@ -3,7 +3,7 @@
 var socket = io('http://api.overrustle.com/stream', {
   reconnectionDelay: 500+(5000*Math.random())
 });
-// var socket = io('http://localhost:9998');
+// var socket = io('http://localhost:9998/stream');
 
 var path = window.location.href.replace(window.location.origin, "")
 if(/s=(twitch|hitbox|mlg)/gi.test(path)){
