@@ -7,7 +7,8 @@ var apis = {
   PLACEHOLDERS: {
     "picarto": "https://www.picarto.tv/img/thumbnail_stream_default.png",
     "mlg": "http://s3.amazonaws.com/s3.majorleaguegaming.com/tv-category-icons/image_16_9s/95/medium/comingsoon.jpg?1390332269",
-    "nsfw-chaturbate": "http://i.imgur.com/x7iCWRe.jpg"
+    "nsfw-chaturbate": "http://i.imgur.com/x7iCWRe.jpg",
+    "livestream": "http://thumbnail.api.livestream.com/thumbnail?name=error"
   },
   STREAMING_APIS: {
     // TODO: get stream TITLE
@@ -92,7 +93,7 @@ var apis = {
         if(e)
           return error_callback(e)
         var json = res
-        api_data.live = r.statusCode < 400 && json.total > 0 && json.data[0].user.channel.is_live
+        api_data.live = (r.statusCode < 400) && json.total > 0 && json.data[0].user.channel.is_live
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
           var _stream = json.data[0].user.channel
@@ -124,6 +125,30 @@ var apis = {
           api_data.title = api_data.channel
         }else{
           api_data.image_url = "https://www.picarto.tv/img/offlinestreamer.png"
+        }
+        callback(api_data);
+      })
+    },
+    // http://thumbnail.api.livestream.com/thumbnail?name=judge_judy
+    // http://xjudge-judyx.api.channel.livestream.com/2.0/widgetinfo.json
+    livestream: function (api_data, error_callback, callback) {
+      // undocumented API's ayy lmao
+      return request.get({uri:"http://x"+api_data.channel.toLowerCase().replace(/_/gi, '-')+
+        "x.api.channel.livestream.com/2.0/widgetinfo.json&cachebuster=" + new Date().valueOf()}, function (e, r, res) {
+        if(e)
+          return error_callback(e)
+        // console.log("Got response: " + res.statusCode);
+        var json = res;
+        api_data.live = (r.statusCode < 400) && res.hasOwnProperty("channel") && (res['channel']['currentViewerCount'] > 0)
+        // NOTE: if a stream is playing from replays, it will behave normally on desktop,
+        // but they don't provide a m3u8 stream when it's playing from replays
+        if(api_data.live){
+          // TODO: maybe get their offline image?
+          api_data.image_url = "http://thumbnail.api.livestream.com/thumbnail?name="+api_data.channel.toLowerCase(); 
+          api_data.viewers = parseInt(json.channel.currentViewerCount, 10);
+          api_data.title = json.channel.title;
+        }else{
+          api_data.image_url = apis.getPlaceholder('livestream')
         }
         callback(api_data);
       })
