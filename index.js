@@ -271,6 +271,9 @@ function handleSocket (socket){
     data['which'] = data['which'] ? data['which'] : 'administrate'
     admin.handle(data['which'], data)
   })
+  socket.on('api', function(){
+    socket.emit('strims', getStrims())
+  })
 }
 
 watchers.on('connection', function (socket) {
