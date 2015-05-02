@@ -17,7 +17,8 @@ var shortcuts = {
     'l':'livestream',
     'd':'dailymotion',
     'a':'azubu',
-    'p':'picarto'
+    'p':'picarto',
+    'v':'vaughn'
   },
   expand: function (raw_path) {
     var parts = raw_path.split('/')
