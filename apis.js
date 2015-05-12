@@ -1,3 +1,6 @@
+var dotenv = require('dotenv')
+dotenv.load()
+
 var http = require("http")
 var request = require('request');
 var extend = require('util')._extend;
@@ -253,22 +256,32 @@ var apis = {
     },
     // https://gdata.youtube.com/feeds/api/videos/z18NGK1H8n8?v=2&alt=json
     youtube: function (api_data, error_callback, callback) {
-      return request.get({json:true, uri:"https://gdata.youtube.com/feeds/api/videos/"+api_data.channel+"?v=2&alt=json"}, function (e, r, res) {
+      return request.get({json:true, uri:"https://www.googleapis.com/youtube/v3/videos?key="+process.env['GOOGLE_PUBLIC_API_KEY']+"&part=liveStreamingDetails%2Csnippet%2Cstatistics%2Cstatus&id="+api_data.channel}, function (e, r, res) {
         if(e)
           return error_callback(e)
         var json = res
-        api_data.live = r.statusCode < 400 && typeof json.entry !== 'undefined'
+        api_data.live = r.statusCode < 400 && typeof json.items !== 'undefined' && json.items.length > 0
+        json = json.items[0]
         // console.log("Got response: " + res.statusCode);
         if(api_data.live){
-          api_data.image_url = "http://img.youtube.com/vi/"+api_data.channel+"/maxresdefault.jpg"
-          // for some reason the default is ugly, so don't use it
-          // api_data.image_url = json.entry['media$group']['media$thumbnail'][0]['url'];
-          api_data.viewers = 0
-          // because sometimes youtube gives us bad data...
-          if (json.entry.hasOwnProperty('yt$statistics') && json.entry['yt$statistics'].hasOwnProperty('viewCount')) {
-            api_data.viewers = parseInt(json.entry['yt$statistics']['viewCount'], 10)
+          // is this a video, or a live stream?
+          if(json.snippet.liveBroadcastContent == "live"){
+            api_data.viewers = json.liveStreamingDetails.concurrentViewers
+          }else if(json.hasOwnProperty("statistics") && json.statistics.hasOwnProperty('viewCount')){
+            // technically this check is un-needed
+            // but in the past we had problems with 
+            // youtube providing incomplete data
+            api_data.viewers = parseInt(json.statistics.viewCount, 10)
+          }else{
+            api_data.viewers = 0
           }
-          api_data.title = json.entry.title['$t'];
+
+          // api_data.image_url = snippet.thumbnails
+          api_data.image_url = json.snippet.thumbnails.high.url
+          // normally they don't give you maxresdefault
+          // api_data.image_url = "http://img.youtube.com/vi/"+api_data.channel+"/maxresdefault.jpg"
+
+          api_data.title = json.snippet.title;
         }else{
           api_data.image_url = apis.getPlaceholder('youtube')
         }
