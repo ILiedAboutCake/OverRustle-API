@@ -266,7 +266,7 @@ var apis = {
         if(api_data.live){
           // is this a video, or a live stream?
           if(json.snippet.liveBroadcastContent == "live"){
-            api_data.viewers = json.liveStreamingDetails.concurrentViewers
+            api_data.viewers = parseInt(json.liveStreamingDetails.concurrentViewers, 10)
           }else if(json.hasOwnProperty("statistics") && json.statistics.hasOwnProperty('viewCount')){
             // technically this check is un-needed
             // but in the past we had problems with 
