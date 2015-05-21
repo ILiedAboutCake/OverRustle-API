@@ -1,5 +1,5 @@
-// var API_SERVER = "http://api.overrustle.com"
-var API_SERVER = "http://localhost:9998"
+var API_SERVER = "http://api.overrustle.com"
+// var API_SERVER = "http://localhost:9998"
 
 var socket = io(API_SERVER+'/stream', {
   reconnectionDelay: 500+(5000*Math.random())
