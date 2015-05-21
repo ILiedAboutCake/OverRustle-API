@@ -1,16 +1,27 @@
-// client side code
+// var API_SERVER = "http://api.overrustle.com"
+var API_SERVER = "http://localhost:9998"
 
-var socket = io('http://api.overrustle.com/stream', {
+var socket = io(API_SERVER+'/stream', {
   reconnectionDelay: 500+(5000*Math.random())
 });
-// var socket = io('http://localhost:9998/stream');
 
+// client side code
 var path = window.location.href.replace(window.location.origin, "")
-if(/s=(twitch|hitbox|mlg)/gi.test(path)){
+if(/(twitch|hitbox|mlg)/gi.test(path)){
   path = path.toLowerCase()
 }
 
-socket.on('strim.'+path, function(viewers){
+socket.on('connect', function(){
+  console.log('connected', arguments)
+  socket.emit('watch', {path: path})
+})
+
+socket.on('watch', function(data){
+  console.log("approved to watch", data['path'])
+})
+
+socket.on('viewers', function(viewers){
+  console.log("got viewers", viewers)
   $('#server-broadcast').html(viewers + " Rustlers"); // not using formatNumber
   // $('#server-broadcast').text(JSON.stringify(api_data)); // not using formatNumber
 });

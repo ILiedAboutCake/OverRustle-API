@@ -10,7 +10,7 @@ var io = require('socket.io')(http);
 // share a reference
 app.socketio = io;
 
-var url = require('url');
+var url = require('url')
 var jf = require('jsonfile');
 var fs = require('fs')
 var extend = require('util')._extend;
@@ -26,26 +26,38 @@ var API_CACHE_AGE = 60000
 
 function isGood(s){
   if(typeof(s) !== typeof('string')){
+    console.log('not a string')
     return false
   }
   if(s.length === 0){
+    console.log('empty string')
     return false
   }
-  if(/s=(twitch|hitbox|mlg)/gi.test(s)){
+
+  if(/(twitch|hitbox|mlg)/gi.test(s)){
+    // console.log('forcing lowercase on case insensitive platforms')
     s = s.toLowerCase()
   }
-  var parts = s.split('/')
-  if(parts.length < 3){
+
+  var surl = url.parse(s, true)
+
+  if(surl.path.length <= 1){
+    console.log('not a string')
     return false
   }
-  parts.shift(0)
-  parts.shift(0)
-  parts.shift(0)
-  var path = parts.join('/')
-  if(REGEX.test(path)){
+  if(REGEX.test(surl.path)){
+    console.log('path with illegal characters')
     return false
   }
-  return "/"+path
+  if(surl.path.toLowerCase().indexOf("/destinychat") === -1){
+    // http://derp.com/destinychat?s=twitch&stream=derperz
+    var parts = surl.path.split('/')
+    if(parts.length > 4 && parts[1].toLowerCase() !== 'advanced'){
+      console.log('too many slashes for a non-advanced legacy stream')
+      return false
+    }
+  }
+  return surl.path
 }
 
 function isIdle (s) {
@@ -171,18 +183,28 @@ var consider_metadata = function (strim_url) {
 io.idlers = {}
 io.ips = {} // address: number_of_connections
 
-function validate(socket){
-  // console.log(socket.request.headers)
+function validateIP(socket){
   // set the proper IP address if this request was forwarded 
   // this lets us properly track requests that pass through a cache
   if(socket.request.headers.hasOwnProperty('x-forwarded-for')){
     socket.request.connection._peername.address = socket.request.headers['x-forwarded-for'];
   }
   socket.ip = socket.request.connection._peername.address;
-  socket.strim = isGood(socket.request.headers.referer);
-  if(socket.strim === false || ((io.ips.hasOwnProperty(socket.ip)) && (io.ips[socket.ip]+1 > MAX_CONNECTIONS))){
-    var reason = socket.strim === false ? "bad strim" : "too many connections"
-    console.log('BLOCKED a connection because '+reason+':', socket.request.connection._peername);
+
+  if(io.ips.hasOwnProperty(socket.ip) && (io.ips[socket.ip]+1 > MAX_CONNECTIONS) ){
+    console.log('BLOCKED a connection because too many connections:', socket.request.connection._peername);
+    socket.disconnect()
+    return false
+  }
+  return true
+}
+
+function validateStrim(socket, path){
+  // socket.strim = isGood(socket.request.headers.referer);
+  socket.strim = isGood(path);
+
+  if(socket.strim === false){
+    console.log('BLOCKED a connection because BAD STRIM:', socket.strim, socket.request.connection._peername);
     socket.disconnect()
     return false
   }
@@ -196,14 +218,13 @@ app.watchers = watchers
 app.browsers = browsers
 
 function handleSocket (socket){
-  if (!validate(socket)) {
-    return
-  }
+  // console.log('checking if socket is idle', socket.strim)
   socket.idle = isIdle(socket.strim);
 
   io.ips[socket.ip] = 1 + ((io.ips.hasOwnProperty(socket.ip)) ? io.ips[socket.ip] : 0);
   socket.section = socket.idle ? "idlers" : "strims";
 
+  socket.join(socket.strim)
   io[socket.section][socket.strim] = 1 + ((io[socket.section].hasOwnProperty(socket.strim)) ? io[socket.section][socket.strim] : 0)
 
   socket.on('disconnect', function(){
@@ -213,7 +234,9 @@ function handleSocket (socket){
       if(io[socket.section][socket.strim] <= 0){
         var mi = io.metaindex[socket.strim]
         if(mi){
+          // stop tracking metadata
           delete io.metadata[mi]
+          // stop tracking the index
           delete io.metaindex[socket.strim]
           jf.writeFile(metadata_path, io.metadata, function(err) {
             if(err)
@@ -224,12 +247,20 @@ function handleSocket (socket){
               console.log(err)
           });
         }
+        // stop tracking viewer totals
         delete io[socket.section][socket.strim]
+        // close the channel
+        // delete channels[socket.strim]
+        socket.leave(socket.strim)
       }
       console.log('user disconnected from '+socket.strim);
 
       browsers.emit('strims', getStrims());
-      watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
+      // if(channels.hasOwnProperty(socket.strim)){
+      //   channels[socket.strim].emit('viewers', io.strims[socket.strim])
+      // }
+      watchers.to(socket.strim).emit('viewers', io.strims[socket.strim])
+      // watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
     }
     // remove IP
     if(socket.hasOwnProperty('ip') && (io.ips.hasOwnProperty(socket.ip))){
@@ -265,8 +296,10 @@ function handleSocket (socket){
     console.log('a user joined '+socket.strim, socket.request.connection._peername);
 
     browsers.emit('strims', getStrims());
-    watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
+    watchers.to(socket.strim).emit('viewers', io.strims[socket.strim])
+    // watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
   }
+
   socket.on('admin', function (data) {
     data['which'] = data['which'] ? data['which'] : 'administrate'
     admin.handle(data['which'], data)
@@ -276,11 +309,43 @@ function handleSocket (socket){
   })
 }
 
+var channels = {}
+
+function ensureChannel(path){
+  if(!channels.hasOwnProperty(path)){
+    console.log('creating the new channel because it does not exist', path)
+    channels[path] = io.of(path)  
+    channels[path].on('connection', function (socket) {
+      // this might be a VERY LEAKY variable...
+      console.log(path, "connected to a viewersocket")
+      socket.strim = path
+      handleSocket(socket)
+    })
+  }
+}
+
 watchers.on('connection', function (socket) {
-  handleSocket(socket)
+  if(!validateIP(socket)){
+    return
+  }
+  // console.log('connected a client!')
+  socket.on('watch', function (data){
+    // console.log('client wants to watch', data)
+    if(validateStrim(socket, data['path'])){
+      // ensureChannel(socket.strim)
+      socket.emit('watch', {path: socket.strim})
+      handleSocket(socket)
+    }else{
+      console.log('invalid stream', data['path'])
+    }
+  })
 })
 
 browsers.on('connection', function (socket) {
+  if(!validateIP(socket)){
+    return
+  }
+  console.log('connnected a browser')
   handleSocket(socket)
 })
 
