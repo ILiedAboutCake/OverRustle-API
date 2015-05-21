@@ -249,16 +249,13 @@ function handleSocket (socket){
         }
         // stop tracking viewer totals
         delete io[socket.section][socket.strim]
-        // close the channel
-        // delete channels[socket.strim]
+
         socket.leave(socket.strim)
       }
       console.log('user disconnected from '+socket.strim);
 
       browsers.emit('strims', getStrims());
-      // if(channels.hasOwnProperty(socket.strim)){
-      //   channels[socket.strim].emit('viewers', io.strims[socket.strim])
-      // }
+
       watchers.to(socket.strim).emit('viewers', io.strims[socket.strim])
       // watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
     }
@@ -309,21 +306,6 @@ function handleSocket (socket){
   })
 }
 
-var channels = {}
-
-function ensureChannel(path){
-  if(!channels.hasOwnProperty(path)){
-    console.log('creating the new channel because it does not exist', path)
-    channels[path] = io.of(path)  
-    channels[path].on('connection', function (socket) {
-      // this might be a VERY LEAKY variable...
-      console.log(path, "connected to a viewersocket")
-      socket.strim = path
-      handleSocket(socket)
-    })
-  }
-}
-
 watchers.on('connection', function (socket) {
   if(!validateIP(socket)){
     return
@@ -346,6 +328,9 @@ browsers.on('connection', function (socket) {
     return
   }
   console.log('connnected a browser')
+  // strim or referrer is unimportant here
+  // so it doesn't need to be very accurate
+  socket.strim = socket.request.headers.referer
   handleSocket(socket)
 })
 
