@@ -71,54 +71,67 @@ function isIdle (s) {
 }
 
 function getStrims () {
+  var sections = {
+    idlers: {},
+    strims: {}
+  }
+
+  // break into sections
+  for(var room_name in io.adapter.rooms){
+    var room = io.adapter.rooms[room_name]
+    sections[room.section][room_name] = Object.keys(room).length
+  }
+  var strims = sections.strims
+  var idlers = sections.idlers
   // this is probably not a good place to do this
   for(var skey in io.metadata){
-    io.metadata[skey].rustlers = io.strims[io.metadata[skey]['url']] || 0
+    io.metadata[skey].rustlers = countInRoom(io.metadata[skey]['url'])
   }
 
   // clump streams into live first, then offline
   var sorted_streams = {}
   // add live streams
-  for(var strim in io.strims){
+  for(var strim in strims){
     if (io.metaindex.hasOwnProperty(strim)) {
       var mk = io.metaindex[strim]
       if (io.metadata.hasOwnProperty(mk)) {
         var md = io.metadata[mk]
         if(md.live){
-          sorted_streams[strim] = io.strims[strim]
+          sorted_streams[strim] = countInRoom(strim)
         }
       }
     }
   }
   // add offline streams
-  for(var strim in io.strims){
+  for(var strim in strims){
     if (io.metaindex.hasOwnProperty(strim)) {
       var mk = io.metaindex[strim]
       if (io.metadata.hasOwnProperty(mk)) {
         var md = io.metadata[mk]
         if(!md.live){
-          sorted_streams[strim] = io.strims[strim]
+          sorted_streams[strim] = countInRoom(strim)
         }
       }
     }
   }
+
+
   return {
-    'viewercount' : Object.keys(io.strims).reduce(function (previous, key) {
-      return previous + io.strims[key];
+    'viewercount' : Object.keys(strims).reduce(function (previous, key) {
+      return previous + strims[key];
     }, 0),
-    'idlecount' : Object.keys(io.idlers).reduce(function (previous, key) {
-      return previous + io.idlers[key];
+    'idlecount' : Object.keys(idlers).reduce(function (previous, key) {
+      return previous + idlers[key];
     }, 0),
     'connections' : Object.keys(io.ips).reduce(function (previous, key) {
       return previous + io.ips[key];
     }, 0),
     'streams' : sorted_streams,
-    'idlers' : io.idlers,
+    'idlers' : idlers,
     'metadata' : io.metadata,
     'metaindex': io.metaindex
   }
 }
-io.strims = {}
 
 var metadata_path = './cache/metadata.json'
 var metaindex_path = './cache/metaindex.json'
@@ -180,7 +193,6 @@ var consider_metadata = function (strim_url) {
   // body...
 }
 
-io.idlers = {}
 io.ips = {} // address: number_of_connections
 
 function validateIP(socket){
@@ -217,21 +229,31 @@ var browsers = io.of('/streams')
 app.watchers = watchers
 app.browsers = browsers
 
+function countInRoom(room_name){
+  return Object.keys(io.adapter.rooms[room_name] || {}).length
+}
+
 function handleSocket (socket){
   // console.log('checking if socket is idle', socket.strim)
   socket.idle = isIdle(socket.strim);
 
   io.ips[socket.ip] = 1 + ((io.ips.hasOwnProperty(socket.ip)) ? io.ips[socket.ip] : 0);
-  socket.section = socket.idle ? "idlers" : "strims";
-
   socket.join(socket.strim)
-  io[socket.section][socket.strim] = 1 + ((io[socket.section].hasOwnProperty(socket.strim)) ? io[socket.section][socket.strim] : 0)
+
+  io.adapter.rooms[socket.strim].section = socket.idle ? "idlers" : "strims";
+
+  // TODO
+  // just count how many people are in a room
+  // var room = io.adapter.rooms['private_room:90210']; 
+  // Object.keys(room).length
+  // io[socket.section][socket.strim] = 1 + ((io[socket.section].hasOwnProperty(socket.strim)) ? io[socket.section][socket.strim] : 0)
 
   socket.on('disconnect', function(){
     // remove stream
-    if(socket.hasOwnProperty('strim') && socket.hasOwnProperty('section') && (io[socket.section].hasOwnProperty(socket.strim)) ){
-      io[socket.section][socket.strim] += -1
-      if(io[socket.section][socket.strim] <= 0){
+    if(socket.hasOwnProperty('strim')){
+      socket.leave(socket.strim)
+      var viewers = countInRoom(socket.strim)
+      if(viewers <= 0){
         var mi = io.metaindex[socket.strim]
         if(mi){
           // stop tracking metadata
@@ -247,17 +269,14 @@ function handleSocket (socket){
               console.log(err)
           });
         }
-        // stop tracking viewer totals
-        delete io[socket.section][socket.strim]
-
-        socket.leave(socket.strim)
       }
       console.log('user disconnected from '+socket.strim);
 
       browsers.emit('strims', getStrims());
 
-      watchers.to(socket.strim).emit('viewers', io.strims[socket.strim])
-      // watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
+      if(viewers > 0){
+        watchers.to(socket.strim).emit('viewers', viewers)
+      }
     }
     // remove IP
     if(socket.hasOwnProperty('ip') && (io.ips.hasOwnProperty(socket.ip))){
@@ -273,28 +292,42 @@ function handleSocket (socket){
     socket.emit('strims', getStrims())
   }else{
     // get metadata
-    var parts = url.parse(socket.strim, true).query
-    // TODO: handle channels
+    var surl = url.parse(socket.strim, true)
+    var parts = surl.query
+
+    if(parts.hasOwnProperty('user') || parts.hasOwnProperty('s') || parts.hasOwnProperty('stream')){
+      // LEGACY
+      // no work to do here!
+    }else{
+      // excludes the querystring
+      var uparts = surl.pathname.split('/')
+      if (uparts.length > 2 && upart[2].length > 0) {
+        parts['s'] = uparts[1]
+        parts['stream'] = uparts[2]
+      }else if(uparts.length > 1 && uparts[1].length > 0){
+        parts['user'] = uparts[1]
+      }
+    }
+    var viewers = countInRoom(socket.strim)
     if(parts.hasOwnProperty('user')){
       channel_fetcher({
         name: parts['user'],
         url: socket.strim,
-        rustlers: io.strims[socket.strim]        
+        rustlers: viewers,      
       }, consider_metadata(socket.strim))
     }else{
       consider_metadata(socket.strim)({
         platform: parts['s'],
         channel: parts['stream'],
         url: socket.strim,
-        rustlers: io.strims[socket.strim]
+        rustlers: viewers
       })
     }
 
     console.log('a user joined '+socket.strim, socket.request.connection._peername);
 
     browsers.emit('strims', getStrims());
-    watchers.to(socket.strim).emit('viewers', io.strims[socket.strim])
-    // watchers.emit('strim.'+socket.strim, io.strims[socket.strim]);
+    watchers.to(socket.strim).emit('viewers', viewers)
   }
 
   socket.on('admin', function (data) {
