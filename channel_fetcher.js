@@ -40,7 +40,7 @@ module.exports = function (metadata, callback) {
     if(!obj || e){
       console.log('nothing in modern redis, lets check legacy DB ...')
       legacy_client.hgetall("channel:"+channel_name, function (le, lobj){
-        if(!leobj || le){
+        if(!lobj || le){
           console.log('nothing in legacy either SoSad')
           return
         }    
