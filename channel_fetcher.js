@@ -51,12 +51,13 @@ module.exports = function (metadata, callback) {
         })
         callback(metadata)
       })
+    }else{
+      // this merge will override metadata values
+      extend(metadata, {
+        platform: obj.service,
+        channel: obj.stream
+      })
+      callback(metadata)
     }
-    // this merge will override metadata values
-    extend(metadata, {
-      platform: obj.service,
-      channel: obj.stream
-    })
-    callback(metadata)
   })
 }
