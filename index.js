@@ -71,50 +71,56 @@ function isIdle (s) {
 }
 
 function getStrims () {
-  var sections = {
-    idlers: {},
-    strims: {}
+  var idlers = {}
+
+  for(var room_name in browsers.adapter.rooms){
+    // in order to exclude individual socket's rooms
+    if(room_name.indexOf('/') !== -1){
+      idlers[room_name] = countBrowsers(room_name)    
+    }
   }
 
-  // break into sections
-  for(var room_name in io.adapter.rooms){
-    var room = io.adapter.rooms[room_name]
-    sections[room.section][room_name] = Object.keys(room).length
-  }
-  var strims = sections.strims
-  var idlers = sections.idlers
   // this is probably not a good place to do this
+  var deletable_keys = []
   for(var skey in io.metadata){
-    io.metadata[skey].rustlers = countInRoom(io.metadata[skey]['url'])
+    io.metadata[skey].rustlers = countWatchers(io.metadata[skey]['url'])
+    // if nobody is watching this stream, and it's cache is expired
+    // remove it from metadata
+    if (io.metadata[skey].rustlers <= 0){
+      if(io.metadata[skey].expire_at+API_CACHE_AGE < ((new Date).getTime()) ) {
+        deletable_keys.push({skey: skey, url: io.metadata[skey].url})
+      }
+    }
   }
+  deletable_keys.forEach(function (pair) {
+    delete io.metadata[pair.skey]
+    delete io.metaindex[pair.url]
+  })
+
+  var stream_list = Object.keys(io.metadata).map(function (key) {
+    return io.metadata[key]
+  })
 
   // clump streams into live first, then offline
-  var sorted_streams = {}
-  // add live streams
-  for(var strim in strims){
-    if (io.metaindex.hasOwnProperty(strim)) {
-      var mk = io.metaindex[strim]
-      if (io.metadata.hasOwnProperty(mk)) {
-        var md = io.metadata[mk]
-        if(md.live){
-          sorted_streams[strim] = countInRoom(strim)
-        }
-      }
-    }
-  }
-  // add offline streams
-  for(var strim in strims){
-    if (io.metaindex.hasOwnProperty(strim)) {
-      var mk = io.metaindex[strim]
-      if (io.metadata.hasOwnProperty(mk)) {
-        var md = io.metadata[mk]
-        if(!md.live){
-          sorted_streams[strim] = countInRoom(strim)
-        }
-      }
-    }
-  }
+  stream_list.sort(function (a,b) {
+    // give LIVE streams more weight in sorting higher
+    var amulti = a.hasOwnProperty('live') && a['live'] ? 1000 : 1 ;
+    var bmulti = b.hasOwnProperty('live') && b['live'] ? 1000 : 1 ;
+    if (amulti*a.rustlers < bmulti*b.rustlers)
+       return 1;
+    if (amulti*a.rustlers > bmulti*b.rustlers)
+      return -1;
+    return 0;
+  })
 
+  var strims = {}
+  stream_list.forEach(function (stream){
+    strims[stream['url']] = stream['rustlers']    
+  })
+
+  // TODO: send a simple stream_list array
+  // with metadata objects sorted by view count
+  // WAIT UNTIL LEGACY SUPPORT ENDS
 
   return {
     'viewercount' : Object.keys(strims).reduce(function (previous, key) {
@@ -126,10 +132,11 @@ function getStrims () {
     'connections' : Object.keys(io.ips).reduce(function (previous, key) {
       return previous + io.ips[key];
     }, 0),
-    'streams' : sorted_streams,
+    'streams' : strims,
     'idlers' : idlers,
     'metadata' : io.metadata,
-    'metaindex': io.metaindex
+    'metaindex': io.metaindex,
+    'stream_list' : stream_list
   }
 }
 
@@ -229,30 +236,30 @@ var browsers = io.of('/streams')
 app.watchers = watchers
 app.browsers = browsers
 
-function countInRoom(room_name){
-  return Object.keys(io.adapter.rooms[room_name] || {}).length
+function countInRoom (socket) {
+  return socket.idle ? countBrowsers(socket.strim) : countWatchers(socket.strim)
+}
+
+function countWatchers(room_name){
+  var wc = Object.keys(watchers.adapter.rooms[room_name] || {})
+  // console.log('counted watchers in', room_name, wc.length, wc)
+  return wc.length
+}
+
+function countBrowsers(room_name){
+  return Object.keys(browsers.adapter.rooms[room_name] || {}).length  
 }
 
 function handleSocket (socket){
   // console.log('checking if socket is idle', socket.strim)
-  socket.idle = isIdle(socket.strim);
-
   io.ips[socket.ip] = 1 + ((io.ips.hasOwnProperty(socket.ip)) ? io.ips[socket.ip] : 0);
   socket.join(socket.strim)
-
-  io.adapter.rooms[socket.strim].section = socket.idle ? "idlers" : "strims";
-
-  // TODO
-  // just count how many people are in a room
-  // var room = io.adapter.rooms['private_room:90210']; 
-  // Object.keys(room).length
-  // io[socket.section][socket.strim] = 1 + ((io[socket.section].hasOwnProperty(socket.strim)) ? io[socket.section][socket.strim] : 0)
 
   socket.on('disconnect', function(){
     // remove stream
     if(socket.hasOwnProperty('strim')){
       socket.leave(socket.strim)
-      var viewers = countInRoom(socket.strim)
+      var viewers = countInRoom(socket)
       if(viewers <= 0){
         var mi = io.metaindex[socket.strim]
         if(mi){
@@ -287,49 +294,6 @@ function handleSocket (socket){
     }
   });
 
-  if (socket.idle) {
-    console.log('a user is idle on '+socket.strim, socket.request.connection._peername);
-    socket.emit('strims', getStrims())
-  }else{
-    // get metadata
-    var surl = url.parse(socket.strim, true)
-    var parts = surl.query
-
-    if(parts.hasOwnProperty('user') || parts.hasOwnProperty('s') || parts.hasOwnProperty('stream')){
-      // LEGACY
-      // no work to do here!
-    }else{
-      // excludes the querystring
-      var uparts = surl.pathname.split('/')
-      if (uparts.length > 2 && upart[2].length > 0) {
-        parts['s'] = uparts[1]
-        parts['stream'] = uparts[2]
-      }else if(uparts.length > 1 && uparts[1].length > 0){
-        parts['user'] = uparts[1]
-      }
-    }
-    var viewers = countInRoom(socket.strim)
-    if(parts.hasOwnProperty('user')){
-      channel_fetcher({
-        name: parts['user'],
-        url: socket.strim,
-        rustlers: viewers,      
-      }, consider_metadata(socket.strim))
-    }else{
-      consider_metadata(socket.strim)({
-        platform: parts['s'],
-        channel: parts['stream'],
-        url: socket.strim,
-        rustlers: viewers
-      })
-    }
-
-    console.log('a user joined '+socket.strim, socket.request.connection._peername);
-
-    browsers.emit('strims', getStrims());
-    watchers.to(socket.strim).emit('viewers', viewers)
-  }
-
   socket.on('admin', function (data) {
     data['which'] = data['which'] ? data['which'] : 'administrate'
     admin.handle(data['which'], data)
@@ -337,6 +301,57 @@ function handleSocket (socket){
   socket.on('api', function(){
     socket.emit('strims', getStrims())
   })
+}
+
+function handleBrowser(socket){
+  socket.idle = true
+  handleSocket(socket)
+  console.log('a user is idle on '+socket.strim, socket.request.connection._peername);
+  socket.emit('strims', getStrims())
+}
+
+function handleWatcher(socket){
+  // get metadata
+  socket.idle = false
+  handleSocket(socket)
+
+  var surl = url.parse(socket.strim, true)
+  var parts = surl.query
+
+  if(parts.hasOwnProperty('user') || parts.hasOwnProperty('s') || parts.hasOwnProperty('stream')){
+    // LEGACY
+    // no work to do here!
+  }else{
+    // excludes the querystring
+    var uparts = surl.pathname.split('/')
+    if (uparts.length > 2 && upart[2].length > 0) {
+      parts['s'] = uparts[1]
+      parts['stream'] = uparts[2]
+    }else if(uparts.length > 1 && uparts[1].length > 0){
+      parts['user'] = uparts[1]
+    }
+  }
+  // only called for watchers
+  var viewers = countWatchers(socket.strim)
+  if(parts.hasOwnProperty('user')){
+    channel_fetcher({
+      name: parts['user'],
+      url: socket.strim,
+      rustlers: viewers,      
+    }, consider_metadata(socket.strim))
+  }else{
+    consider_metadata(socket.strim)({
+      platform: parts['s'],
+      channel: parts['stream'],
+      url: socket.strim,
+      rustlers: viewers
+    })
+  }
+
+  console.log('a user joined '+socket.strim, socket.request.connection._peername);
+
+  browsers.emit('strims', getStrims());
+  watchers.to(socket.strim).emit('viewers', viewers)
 }
 
 watchers.on('connection', function (socket) {
@@ -347,9 +362,8 @@ watchers.on('connection', function (socket) {
   socket.on('watch', function (data){
     // console.log('client wants to watch', data)
     if(validateStrim(socket, data['path'])){
-      // ensureChannel(socket.strim)
       socket.emit('watch', {path: socket.strim})
-      handleSocket(socket)
+      handleWatcher(socket)
     }else{
       console.log('invalid stream', data['path'])
     }
@@ -360,11 +374,21 @@ browsers.on('connection', function (socket) {
   if(!validateIP(socket)){
     return
   }
-  console.log('connnected a browser')
+  console.log('connnected a browser from', socket.request.headers.host)
   // strim or referrer is unimportant here
   // so it doesn't need to be very accurate
   socket.strim = socket.request.headers.referer
-  handleSocket(socket)
+  handleBrowser(socket)
+
+  // socket.on('browse', function (data){
+  //   // console.log('client wants to browse', data)
+  //   if(validateStrim(socket, data['path'])){
+  //     socket.emit('browse', {path: socket.strim})
+  //     handleBrowser(socket)
+  //   }else{
+  //     console.log('invalid browse page', data['path'])
+  //   }
+  // })
 })
 
 app.get('/api', function (req, res){
