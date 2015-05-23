@@ -13,10 +13,14 @@ if(/(twitch|hitbox|mlg)/gi.test(path)){
 
 socket.on('connect', function(){
   console.log('connected', arguments)
-  socket.emit('watch', {path: path})
+  socket.emit('watch', {path: path})  
 })
 
-socket.on('watch', function(data){
+// Having this event active causes all sorts of problems
+// but only on firefox for some reason
+// I suspect this had to do with the .on('event') and .emit('event')
+// crossing paths somehow but only in firefox
+socket.on('approve', function(data){
   console.log("approved to watch", data['path'])
 })
 

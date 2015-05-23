@@ -324,7 +324,7 @@ function handleWatcher(socket){
   }else{
     // excludes the querystring
     var uparts = surl.pathname.split('/')
-    if (uparts.length > 2 && upart[2].length > 0) {
+    if (uparts.length > 2 && uparts[2].length > 0) {
       parts['s'] = uparts[1]
       parts['stream'] = uparts[2]
     }else if(uparts.length > 1 && uparts[1].length > 0){
@@ -360,9 +360,13 @@ watchers.on('connection', function (socket) {
   }
   // console.log('connected a client!')
   socket.on('watch', function (data){
-    // console.log('client wants to watch', data)
+    console.log('client', socket.request.headers['user-agent'], 'wants to watch', data)
     if(validateStrim(socket, data['path'])){
-      socket.emit('watch', {path: socket.strim})
+      // BUG
+      // firefox has some kind of issue with emitted events
+      // and event listeners sharing the same name
+      // between the server and client
+      socket.emit('approve', {path: socket.strim})
       handleWatcher(socket)
     }else{
       console.log('invalid stream', data['path'])
