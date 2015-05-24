@@ -259,8 +259,8 @@ function handleSocket (socket){
     // remove stream
     if(socket.hasOwnProperty('strim')){
       socket.leave(socket.strim)
-      var viewers = countInRoom(socket)
-      if(viewers <= 0){
+      var rustlers = countInRoom(socket)
+      if(rustlers <= 0){
         var mi = io.metaindex[socket.strim]
         if(mi){
           // stop tracking metadata
@@ -281,8 +281,8 @@ function handleSocket (socket){
 
       browsers.emit('strims', getStrims());
 
-      if(viewers > 0){
-        watchers.to(socket.strim).emit('viewers', viewers)
+      if(rustlers > 0){
+        watchers.to(socket.strim).emit('rustlers', rustlers)
       }
     }
     // remove IP
@@ -332,26 +332,26 @@ function handleWatcher(socket){
     }
   }
   // only called for watchers
-  var viewers = countWatchers(socket.strim)
+  var rustlers = countWatchers(socket.strim)
   if(parts.hasOwnProperty('user')){
     channel_fetcher({
       name: parts['user'],
       url: socket.strim,
-      rustlers: viewers,      
+      rustlers: rustlers,      
     }, consider_metadata(socket.strim))
   }else{
     consider_metadata(socket.strim)({
       platform: parts['s'],
       channel: parts['stream'],
       url: socket.strim,
-      rustlers: viewers
+      rustlers: rustlers
     })
   }
 
   console.log('a user joined '+socket.strim, socket.request.connection._peername);
 
   browsers.emit('strims', getStrims());
-  watchers.to(socket.strim).emit('viewers', viewers)
+  watchers.to(socket.strim).emit('rustlers', rustlers)
 }
 
 watchers.on('connection', function (socket) {
