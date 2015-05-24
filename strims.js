@@ -1,3 +1,6 @@
+// TODO: Migrate all this code to the website server
+// once Beta goes into production
+
 var API_SERVER = "http://api.overrustle.com"
 // var API_SERVER = "http://localhost:9998"
 
@@ -24,11 +27,13 @@ socket.on('approve', function(data){
   console.log("approved to watch", data['path'])
 })
 
-socket.on('viewers', function(viewers){
-  console.log("got viewers", viewers)
-  $('#server-broadcast').html(viewers + " Rustlers"); // not using formatNumber
+socket.on('rustlers', function(rustlers){
+  console.log("got rustlers", rustlers)
+  $('#server-broadcast').html(rustlers + " Rustlers"); // not using formatNumber
   // $('#server-broadcast').text(JSON.stringify(api_data)); // not using formatNumber
 });
+
+// TODO this code should be on every page
 
 socket.on('admin', function(data){
   console.log('got admin dankmemes!')
@@ -69,13 +74,59 @@ function feature (metadata) {
     tag: metadata['url'],
     icon: metadata.image_url,
     body: body, 
-    onclick: function () {
-      window.location = metadata['url']
-    }
+    url: metadata['url']
   })
 }
 
 function Notify (title, options) {
+  if (!options) {
+    options = {}
+  }
+  // logic to determine if should inline or desktop
+  if($('.notifications') > 0 && !options['desktop']){
+    NotifyInline(title, options)
+  }else{
+    NotifyDesktop(title, options)
+  }
+  // TODO: make a sound?
+}
+
+function NotifyInline(title, options){
+  if (!options) {
+    options = {}
+  }
+  options['tag'] = options['tag'] ? options['tag'] : Math.random().toString()
+  if($("#"+options['tag']).length > 0){
+    return
+  }
+  var template = '<div class="alert alert-{{class}} alert-dismissible fade in" id="{{tag}}" role="alert">'+
+    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">'+
+    '<span aria-hidden="true">×</span></button>'+
+    '{{text}}'+
+    '</div>';
+
+  var text = "<strong>"+title+"</strong> "
+  if(options['body']){
+    text += options['body']
+  }
+  if (options['url']) {
+    text = "<a href='"+options['url']+"'>"+text+"</a>"
+  }
+  var output = template.replace('{{text}}', text)
+  output = output.replace("{{tag}}", options['tag'])
+  output = output.replace("{{class}}", options['class'] ? options['class'] : 'success')
+  $('.notifications').append(output)
+}
+
+function NotifyDesktop (title, options={}) {
+  if (!options) {
+    options = {}
+  }
+  if (options['url'] && !options['onclick']) {
+    options['onclick'] = function () {
+      window.location = options['url']
+    }
+  }
   Notification.requestPermission( function (permission){
     var n = new Notification(title, options)
     n.onclick = options['onclick']
