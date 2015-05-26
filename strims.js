@@ -118,7 +118,7 @@ function NotifyInline(title, options){
   $('.notifications').append(output)
 }
 
-function NotifyDesktop (title, options={}) {
+function NotifyDesktop (title, options) {
   if (!options) {
     options = {}
   }
