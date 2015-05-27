@@ -4,6 +4,7 @@
   "description": "overustle.com api server",
   "repository": "git@github.com:hayksaakian/OverRustle-API.git",
   "dependencies": {
+    "bluebird": "^2.9.25",
     "body-parser": "^1.10.1",
     "dotenv": "^0.4.0",
     "express": "^4.10.2",

@@ -10,12 +10,18 @@ var io = require('socket.io')(http);
 // share a reference
 app.socketio = io;
 
+var Promise = require('bluebird')
 var url = require('url')
 var jf = require('jsonfile');
 var fs = require('fs')
 var extend = require('util')._extend;
 var apis = require('./apis.js')
 var shortcuts = require('./shortcuts.js')
+var feature = require('./feature.js')
+var makeRedisClient = require('./make_redis_client')
+
+var md_client = makeRedisClient(4)
+
 var admin = require('./admin.js')
 var channel_fetcher = require('./channel_fetcher')
 
@@ -70,74 +76,160 @@ function isIdle (s) {
   return valid_strim === false
 }
 
-function getStrims () {
-  var idlers = {}
+function getStrims() {
+  var api_data = {}
 
-  for(var room_name in browsers.adapter.rooms){
-    // in order to exclude individual socket's rooms
-    if(room_name.indexOf('/') !== -1){
-      idlers[room_name] = countBrowsers(room_name)    
-    }
-  }
+  // cached for this call
 
-  // this is probably not a good place to do this
-  var deletable_keys = []
-  for(var skey in io.metadata){
-    io.metadata[skey].rustlers = countWatchers(io.metadata[skey]['url'])
-    // if nobody is watching this stream, and it's cache is expired
-    // remove it from metadata
-    if (io.metadata[skey].rustlers <= 0){
-      if(io.metadata[skey].expire_at+API_CACHE_AGE < ((new Date).getTime()) ) {
-        deletable_keys.push({skey: skey, url: io.metadata[skey].url})
+  // var featured_list = [{
+  //   featured: true,
+  //   key: 'twitch/1337hephaestus',
+  //   url: '/twitch/1337hephaestus',
+  //   channel: '1337hephaestus',
+  //   platform: 'twitch'
+  // },
+  // {
+  //   featured: true,
+  //   key: 'twitch/destiny',
+  //   url: '/twitch/destiny',
+  //   channel: "destiny",
+  //   platform: "twitch",
+  //   canonical_url: "http://destiny.gg/bigscreen"
+  // }]
+
+  var featured_list = []
+  var featured_hash = {}
+
+  // console.log('starting getStrims')
+  return new Promise(function (resolve, reject){
+    feature.all().then(function(featured_streams){
+      // console.log('featured streams found', featured_streams)
+      featured_list = featured_streams.map(function (stream){
+        // console.log('getStrims stream', stream)
+        var key = ""
+        if(stream.hasOwnProperty('key')){
+          key = stream['key']
+        }else{
+          key = stream.platform+'/'+stream.channel
+        }
+        featured_hash[key] = stream
+        return key
+      })
+      resolve()
+    })
+  }).then(function (){
+    // console.log('getStrims finished compiling featuredlist')
+    return new Promise(function (resolve, reject){
+      api_data.idlers = {}
+
+      for(var room_name in browsers.adapter.rooms){
+        // in order to exclude individual socket's rooms
+        if(room_name.indexOf('/') !== -1){
+          api_data.idlers[room_name] = countBrowsers(room_name)    
+        }
       }
-    }
-  }
-  deletable_keys.forEach(function (pair) {
-    delete io.metadata[pair.skey]
-    delete io.metaindex[pair.url]
+
+      // this is probably not a good place to do this
+      var deletable_keys = []
+      for(var skey in io.metadata){
+        io.metadata[skey].rustlers = countWatchers(io.metadata[skey]['url'])
+        // if nobody is watching this stream, and it's cache is expired
+        // remove it from metadata
+        // unless it's featured
+        if (io.metadata[skey].rustlers <= 0 && !(io.metadata[skey]['featured'])){
+          if(io.metadata[skey].expire_at+API_CACHE_AGE < ((new Date).getTime()) ) {
+            deletable_keys.push({skey: skey, url: io.metadata[skey].url})
+          }
+        }
+      }
+      deletable_keys.forEach(function (pair) {
+        delete io.metadata[pair.skey]
+        delete io.metaindex[pair.url]
+      })
+
+      // TODO: 
+      // Stop sending metadata metaindex once we drop legacy support
+
+      api_data.idlecount = Object.keys(api_data.idlers).reduce(function (previous, key) {
+          return previous + api_data.idlers[key];
+        }, 0)
+      api_data.connections = Object.keys(io.ips).reduce(function (previous, key) {
+          return previous + io.ips[key];
+        }, 0)
+
+      api_data.stream_list = Object.keys(io.metadata).map(function (key) {
+        var stream = io.metadata[key]
+        stream.featured = featured_hash.hasOwnProperty(key)
+        if(stream.featured === true || stream.featured === "true"){
+          featured_list.splice(featured_list.indexOf(key), 1)
+          if(featured_hash[key]['canonical_url']){
+            stream.canonical_url = featured_hash[key]['canonical_url']
+          }
+        }
+        return stream
+      })
+
+      resolve(featured_list)
+    })
+  }).then(function (keys){
+    return Promise.all(keys.map(function (key) {
+      return new Promise(function (resolve, reject) {
+        if(!featured_hash[key].hasOwnProperty('expire_at') || featured_hash[key].expire_at < (new Date).getTime()){
+          featured_hash[key].image_url = apis.getPlaceholder(featured_hash[key].platform);
+          featured_hash[key].expire_at = (new Date).getTime()+API_CACHE_AGE;
+          apis.getAPI(featured_hash[key], function (md){
+            // back up to redis
+            feature.upsert(key, md).then(function(saved_md){
+              featured_hash[key] = saved_md
+              io.metaindex[saved_md.url] = key
+              io.metadata[key] = saved_md
+              resolve()
+            })
+          })
+        }else{
+          resolve()
+        }
+      });
+    }))
+  }).then(function(){
+    return new Promise(function (resolve, reject){
+      // add in featured streams which are not being watched at the moment
+      featured_list.forEach(function (key){
+        api_data.stream_list.push(featured_hash[key])
+      })
+
+      // clump streams into live first, then offline
+      var weightedSort = function (a,b) {
+        // give LIVE streams more weight in sorting higher
+        var amulti = a.hasOwnProperty('live') && a['live'] ? 1000 : 1 ;
+        var bmulti = b.hasOwnProperty('live') && b['live'] ? 1000 : 1 ;
+
+        // weigh featured streams
+        amulti = a.hasOwnProperty('featured') && a['featured'] ? amulti * 100 : amulti ;
+        bmulti = b.hasOwnProperty('featured') && b['featured'] ? bmulti * 100 : bmulti ;
+
+        if (amulti*a.rustlers < bmulti*b.rustlers)
+           return 1;
+        if (amulti*a.rustlers > bmulti*b.rustlers)
+          return -1;
+        return 0;
+      }
+      api_data.stream_list.sort(weightedSort)
+
+      // LEGACY url => view_count map
+      api_data.metadata = io.metadata
+      api_data.metaindex = io.metaindex
+
+      api_data.streams = {}
+      api_data.stream_list.forEach(function (stream){
+        api_data.streams[stream['url']] = stream['rustlers']    
+      })
+      api_data.viewercount = Object.keys(api_data.streams).reduce(function (previous, key) {
+          return previous + api_data.streams[key];
+        }, 0)
+      resolve(api_data)
+    })
   })
-
-  var stream_list = Object.keys(io.metadata).map(function (key) {
-    return io.metadata[key]
-  })
-
-  // clump streams into live first, then offline
-  stream_list.sort(function (a,b) {
-    // give LIVE streams more weight in sorting higher
-    var amulti = a.hasOwnProperty('live') && a['live'] ? 1000 : 1 ;
-    var bmulti = b.hasOwnProperty('live') && b['live'] ? 1000 : 1 ;
-    if (amulti*a.rustlers < bmulti*b.rustlers)
-       return 1;
-    if (amulti*a.rustlers > bmulti*b.rustlers)
-      return -1;
-    return 0;
-  })
-
-  var strims = {}
-  stream_list.forEach(function (stream){
-    strims[stream['url']] = stream['rustlers']    
-  })
-
-  // TODO: send a simple stream_list array
-  // with metadata objects sorted by view count
-  // WAIT UNTIL LEGACY SUPPORT ENDS
-
-  return {
-    'viewercount' : Object.keys(strims).reduce(function (previous, key) {
-      return previous + strims[key];
-    }, 0),
-    'idlecount' : Object.keys(idlers).reduce(function (previous, key) {
-      return previous + idlers[key];
-    }, 0),
-    'connections' : Object.keys(io.ips).reduce(function (previous, key) {
-      return previous + io.ips[key];
-    }, 0),
-    'streams' : strims,
-    'idlers' : idlers,
-    'metadata' : io.metadata,
-    'metaindex': io.metaindex,
-    'stream_list' : stream_list
-  }
 }
 
 var metadata_path = './cache/metadata.json'
@@ -184,7 +276,9 @@ var consider_metadata = function (strim_url) {
 
         // people on specific pages won't usually 
         // be listening for this event, so it's fine
-        browsers.emit('strims', getStrims());
+        getStrims().then(function(api_data){
+          browsers.emit('strims', api_data);        
+        })
         // cache meta data
         jf.writeFile(metadata_path, io.metadata, function(err) {
           if(err)
@@ -263,10 +357,15 @@ function handleSocket (socket){
       if(rustlers <= 0){
         var mi = io.metaindex[socket.strim]
         if(mi){
-          // stop tracking metadata
-          delete io.metadata[mi]
-          // stop tracking the index
-          delete io.metaindex[socket.strim]
+          if(io.metadata[mi] && io.metadata[mi]['featured']){
+            // keep metadata if the stream is featured
+          }else{
+            // stop tracking metadata
+            delete io.metadata[mi]
+            // stop tracking the index
+            delete io.metaindex[socket.strim]            
+          }
+
           jf.writeFile(metadata_path, io.metadata, function(err) {
             if(err)
               console.log(err)
@@ -279,7 +378,9 @@ function handleSocket (socket){
       }
       console.log('user disconnected from '+socket.strim);
 
-      browsers.emit('strims', getStrims());
+      getStrims().then(function(api_data){
+        browsers.emit('strims', api_data);        
+      })
 
       if(rustlers > 0){
         watchers.to(socket.strim).emit('rustlers', rustlers)
@@ -299,7 +400,9 @@ function handleSocket (socket){
     admin.handle(data['which'], data)
   })
   socket.on('api', function(){
-    socket.emit('strims', getStrims())
+    getStrims().then(function(api_data){
+      socket.emit('strims', api_data)
+    })
   })
 }
 
@@ -307,7 +410,10 @@ function handleBrowser(socket){
   socket.idle = true
   handleSocket(socket)
   console.log('a user is idle on '+socket.strim, socket.request.connection._peername);
-  socket.emit('strims', getStrims())
+
+  getStrims().then(function(api_data){
+    socket.emit('strims', api_data);        
+  })
 }
 
 function handleWatcher(socket){
@@ -350,7 +456,9 @@ function handleWatcher(socket){
 
   console.log('a user joined '+socket.strim, socket.request.connection._peername);
 
-  browsers.emit('strims', getStrims());
+  getStrims().then(function(api_data){
+    browsers.emit('strims', api_data);        
+  })
   watchers.to(socket.strim).emit('rustlers', rustlers)
 }
 
@@ -397,8 +505,11 @@ browsers.on('connection', function (socket) {
 
 app.get('/api', function (req, res){
   res.set("Connection", "close");
-  res.send(getStrims());
-  res.end()
+
+  getStrims().then(function(api_data){
+    res.send(api_data);
+    res.end()
+  })
 });
 
 app.get('/strims.js', function (req, res){

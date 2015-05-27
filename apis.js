@@ -47,7 +47,7 @@ var apis = {
           // raise an error?
           api_data.image_url = json.stream.preview.large;
           api_data.viewers = parseInt(json.stream.viewers, 10);
-          api_data.title = json.stream.status;
+          api_data.title = json.stream.channel.status;
         }else{
           api_data.image_url = apis.getPlaceholder('twitch')
         }

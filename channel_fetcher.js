@@ -1,29 +1,5 @@
 // TODO: make this more modular
-var redis_host = '127.0.0.1'
-var redis_db = 1
-var redis = require('redis')
-
-function makeRedisClient (redis_db) {
-  var rv = null
-  if(process.env.REDISTOGO_URL){
-    var rtg   = require("url").parse(process.env.REDISTOGO_URL);
-    rv = redis.createClient(rtg.port, rtg.hostname);
-    rv.auth(rtg.auth.split(":")[1]);
-  }else{
-    rv = redis.createClient('6379', redis_host);
-  }
-  rv.select(redis_db); 
-
-  rv.on('connect', function() {
-    console.log('Connected to redis#'+redis_db.toString());
-  });
-  rv.on('error', function (er) {
-    console.trace('Channel_fetcher') // [1]
-    console.error(er.stack) // [2]
-  })
-
-  return rv
-}
+var makeRedisClient = require('./make_redis_client')
 
 var client = makeRedisClient(0);
 var legacy_client = makeRedisClient(1);
