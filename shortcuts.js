@@ -64,7 +64,7 @@ var shortcuts = {
       if(BETA){
         return res.redirect("http://beta.overrustle.com"+url.parse(request.url).path)
       }
-      var redirect_to = 'http://overrustle.com/channel?user='+
+      var redirect_to = 'http://beta.overrustle.com/'+
         req.params.channel;
       console.log('redirecting to: '+redirect_to);
       res.redirect(url.format(redirect_to));
