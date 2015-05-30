@@ -56,6 +56,7 @@ var featureMod = {
     return featureMod.featureByName(stream.platform+'/'+stream.channel)
   },
   featureByName: function(name){
+    name = 'stream:'+name
     return featureMod.get(name).then(function (stream){
       stream.featured = true
       return featureMod.set(name, stream)
