@@ -43,8 +43,7 @@ var shortcuts = {
         req.params.platform = shortcuts.list[req.params.platform.toLowerCase()];
       };
       var redirect_to = 'http://overrustle.com/'+
-        req.params.platform+'/'
-        req.params.channel;
+        req.params.platform+'/'+req.params.channel;
       console.log('redirecting to: '+redirect_to);
       res.redirect(url.format(redirect_to));
     })
