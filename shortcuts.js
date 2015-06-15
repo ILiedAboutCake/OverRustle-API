@@ -49,7 +49,7 @@ var shortcuts = {
     })
     // handle custom user channels
     app.get('/:channel', function (req, res) {
-      return res.redirect("http://overrustle.com"+url.parse(request.url).path)
+      return res.redirect("http://overrustle.com/"+req.params.channel)
     })
   }
 }
