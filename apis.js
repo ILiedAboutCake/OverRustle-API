@@ -254,6 +254,42 @@ var apis = {
         callback(api_data);
       })
     },
+    // http://live.afreeca.com:8079/api/get_station_status.php?szBjId=han4016
+    // thumnail:
+    // http://liveimg.afreeca.co.kr:9090/155847008_480x270.gif?1
+    // http://live.afreeca.com:8057/api/get_broad_state_list.php
+    afreeca: function (api_data, error_callback, callback) {
+      return request.post({
+        uri:"http://live.afreeca.com:8057/api/get_broad_state_list.php",
+        headers: {
+          referer: "http://play.afreeca.com/"+api_data.channel.toLowerCase()
+        },
+        formData: {
+          uid: api_data.channel.toLowerCase()
+        }
+      }, function (e, r, res) {
+        if(e)
+          return error_callback(e)
+        // they base64 encode this endpoint for no reason
+        if(res[0] !== "{"){
+          res = (new Buffer(res, 'base64')).toString()
+        }
+        var json = JSON.parse(res)['CHANNEL']['BROAD_INFOS'][0]["list"][0]
+        
+        api_data.live = r.statusCode < 300 && parseInt(json.nState, 10) == 1;
+        // console.log("Got response: " + res.statusCode);
+        if(api_data.live){
+          api_data.image_url = json.szThumImg;
+          api_data.viewers = parseInt(json.nCurrentView, 10);
+          
+          api_data.title = json.szBroadTitle;
+        }else{
+          api_data.image_url = "https://ssl-cdn.highwebmedia.com/roomimage/offline.jpg"
+        }
+        callback(api_data);
+      })
+    },
+
     // https://gdata.youtube.com/feeds/api/videos/z18NGK1H8n8?v=2&alt=json
     youtube: function (api_data, error_callback, callback) {
       return request.get({json:true, uri:"https://www.googleapis.com/youtube/v3/videos?key="+process.env['GOOGLE_PUBLIC_API_KEY']+"&part=liveStreamingDetails%2Csnippet%2Cstatistics%2Cstatus&id="+api_data.channel}, function (e, r, res) {
