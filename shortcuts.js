@@ -18,7 +18,7 @@ var shortcuts = {
     'd':'dailymotion',
     'a':'azubu',
     // not the first letter -- so be careful
-    'f':'afreeca'
+    'f':'afreeca',
     'p':'picarto',
     'v':'vaughn'
   },
