@@ -313,7 +313,7 @@ var apis = {
           }
 
           // api_data.image_url = snippet.thumbnails
-          api_data.image_url = json.snippet.thumbnails.high.url
+          api_data.image_url = json.snippet.thumbnails.medium.url
           // normally they don't give you maxresdefault
           // api_data.image_url = "http://img.youtube.com/vi/"+api_data.channel+"/maxresdefault.jpg"
 
