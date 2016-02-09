@@ -19,7 +19,7 @@ var apis = {
     // TODO: return a promise object, instead of nasty callbacks
     // vods ARE case sensitive
     "twitch-vod": function (api_data, error_callback, callback) {
-      return request.get({json:true, uri:"https://api.twitch.tv/kraken/videos/"+api_data.channel}, function (e, r, res) {
+      return request.get({json:true, uri:"https://api.twitch.tv/kraken/videos/v"+api_data.channel}, function (e, r, res) {
         if(e)
           return error_callback(e)
         var json = res
