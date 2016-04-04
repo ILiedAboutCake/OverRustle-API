@@ -290,6 +290,56 @@ var apis = {
       })
     },
 
+    // a nonexistant video:
+    // https://api.dailymotion.com/video/meme?fields=id,title,owner,owner.screenname,owner.url,live_broadcasting,audience,audience_total,media_type,onair,mode,thumbnail_url,views_total
+    // a video:
+    // https://api.dailymotion.com/video/x26ezrb?fields=id,title,owner,owner.screenname,owner.url,live_broadcasting,audience,audience_total,media_type,onair,mode,thumbnail_url,views_total
+    // a live stream:
+    // https://api.dailymotion.com/video/x41rb63?fields=id,title,owner,owner.screenname,owner.url,live_broadcasting,audience,audience_total,media_type,onair,mode,thumbnail_url,views_total
+    // {
+    //   id: "x41rb63",
+    //   title: "Taco Supremo",
+    //   owner: "x1rcmfy",
+    //   owner.screenname: "somefriesmufuggah",
+    //   owner.url: "http://www.dailymotion.com/somefriesmufuggah",
+    //   live_broadcasting: true,
+    //   audience: 2256,
+    //   audience_total: 10016,
+    //   media_type: "video",
+    //   onair: true,
+    //   mode: "live",
+    //   thumbnail_url: "http://s2.dmcdn.net/T5Eyt.jpg",
+    //   views_total: 6572
+    // }
+    // https://api.dailymotion.com/video/x41rb63?fields=id,title,owner,owner.screenname,owner.url,live_broadcasting,audience,audience_total,media_type,onair,mode,thumbnail_url,views_total
+    dailymotion: function (api_data, error_callback, callback) {
+
+      return request.get({json:true, uri:"https://api.dailymotion.com/video/"+api_data.channel+"?fields=id,title,owner,owner.screenname,owner.url,live_broadcasting,audience,audience_total,media_type,onair,mode,thumbnail_url"}, function (e, r, res) {
+        if(e)
+          return error_callback(e)
+        var json = res
+        api_data.live = r.statusCode < 400 && typeof json.error === 'undefined'
+        // console.log("Got response: " + res.statusCode);
+        if(api_data.live){
+          // is this a video, or a live stream?
+          if(json.mode === "live" && json.onair){
+            api_data.viewers = parseInt(json.audience, 10)
+          }else if(json.mode === "vod"){
+            api_data.viewers = parseInt(json.views_total, 10)
+          }else{
+            api_data.viewers = 0
+          }
+
+          api_data.image_url = json.thumbnail_url
+          api_data.title = json.title;
+        }else{
+          api_data.image_url = apis.getPlaceholder('dailymotion')
+        }
+        callback(api_data);
+      })
+    },
+
+
     // https://gdata.youtube.com/feeds/api/videos/z18NGK1H8n8?v=2&alt=json
     youtube: function (api_data, error_callback, callback) {
       return request.get({json:true, uri:"https://www.googleapis.com/youtube/v3/videos?key="+process.env['GOOGLE_PUBLIC_API_KEY']+"&part=liveStreamingDetails%2Csnippet%2Cstatistics%2Cstatus&id="+api_data.channel}, function (e, r, res) {
