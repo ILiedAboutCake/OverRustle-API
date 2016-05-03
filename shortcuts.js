@@ -14,6 +14,7 @@ var shortcuts = {
     // 'n':'nsfw-chaturbate',
     'nsfw-c':'nsfw-chaturbate',
     'u':'ustream',
+    's':'streamup',
     'l':'livestream',
     'd':'dailymotion',
     'a':'azubu',

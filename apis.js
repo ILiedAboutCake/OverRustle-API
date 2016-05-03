@@ -1,10 +1,8 @@
 var dotenv = require('dotenv')
 dotenv.load()
-
 var http = require("http")
 var request = require('request');
 var extend = require('util')._extend;
-
 var apis = {
   DEFAULT_PLACEHOLDER: "http://overrustle.com/img/jigglymonkey.gif",
   // TODO add placeholders for each individual platform
@@ -91,6 +89,26 @@ var apis = {
         callback(api_data);
       })
     },
+    streamup: function (api_data, error_callback, callback) {
+      return request.get({json:true, uri:"http://api.streamup.com/v1/channels/"+api_data.channel}, function (e, r, res) {
+          if(e)
+            return error_callback(e)
+          
+          var json = res
+          api_data.live = r.statusCode != 404 && typeof json.channel !== 'undefined' && json.channel.live === true;
+          // console.log("Got response: " + res.statusCode);
+          if(api_data.live){
+              // TODO: maybe get their offline image?
+              api_data.image_url = json.channel.snapshot.cinematic; 
+              api_data.viewers = parseInt(json.channel.live_viewers_count, 10);
+              api_data.title = json.channel.stream_title;
+          }else{
+            api_data.image_url = apis.getPlaceholder('streamup')
+          }
+          callback(api_data);
+        })
+    },
+
     azubu: function (api_data, error_callback, callback) {
       // undocumented API's ayy lmao
       return request.get({json:true, uri:"http://www.azubu.tv/api/video/active-stream/"+api_data.channel}, function (e, r, res) {
@@ -173,8 +191,7 @@ var apis = {
       // request.js does not work here for some reason. 
       // It always returns 404s.
       // I don't know the why it does that.
-
-      // return request.get({json: true, uri: lvuri}, function (e, r, res) {
+            // return request.get({json: true, uri: lvuri}, function (e, r, res) {
       //   if(e)
       //     return error_callback(e)
       //   console.log("Got response: " + r.statusCode, r.headers, lvuri);
@@ -289,8 +306,7 @@ var apis = {
         callback(api_data);
       })
     },
-
-    // a nonexistant video:
+        // a nonexistant video:
     // https://api.dailymotion.com/video/meme?fields=id,title,owner,owner.screenname,owner.url,live_broadcasting,audience,audience_total,media_type,onair,mode,thumbnail_url,views_total
     // a video:
     // https://api.dailymotion.com/video/x26ezrb?fields=id,title,owner,owner.screenname,owner.url,live_broadcasting,audience,audience_total,media_type,onair,mode,thumbnail_url,views_total
@@ -313,8 +329,7 @@ var apis = {
     // }
     // https://api.dailymotion.com/video/x41rb63?fields=id,title,owner,owner.screenname,owner.url,live_broadcasting,audience,audience_total,media_type,onair,mode,thumbnail_url,views_total
     dailymotion: function (api_data, error_callback, callback) {
-
-      return request.get({json:true, uri:"https://api.dailymotion.com/video/"+api_data.channel+"?fields=id,title,owner,owner.screenname,owner.url,live_broadcasting,audience,audience_total,media_type,onair,mode,thumbnail_url"}, function (e, r, res) {
+            return request.get({json:true, uri:"https://api.dailymotion.com/video/"+api_data.channel+"?fields=id,title,owner,owner.screenname,owner.url,live_broadcasting,audience,audience_total,media_type,onair,mode,thumbnail_url"}, function (e, r, res) {
         if(e)
           return error_callback(e)
         var json = res
@@ -329,8 +344,7 @@ var apis = {
           }else{
             api_data.viewers = 0
           }
-
-          api_data.image_url = json.thumbnail_url
+                    api_data.image_url = json.thumbnail_url
           api_data.title = json.title;
         }else{
           api_data.image_url = apis.getPlaceholder('dailymotion')
@@ -338,7 +352,6 @@ var apis = {
         callback(api_data);
       })
     },
-
 
     // https://gdata.youtube.com/feeds/api/videos/z18NGK1H8n8?v=2&alt=json
     youtube: function (api_data, error_callback, callback) {
@@ -361,13 +374,11 @@ var apis = {
           }else{
             api_data.viewers = 0
           }
-
-          // api_data.image_url = snippet.thumbnails
+                    // api_data.image_url = snippet.thumbnails
           api_data.image_url = json.snippet.thumbnails.medium.url
           // normally they don't give you maxresdefault
           // api_data.image_url = "http://img.youtube.com/vi/"+api_data.channel+"/maxresdefault.jpg"
-
-          api_data.title = json.snippet.title;
+                    api_data.title = json.snippet.title;
         }else{
           api_data.image_url = apis.getPlaceholder('youtube')
         }
@@ -404,5 +415,4 @@ var apis = {
     return apis.PLACEHOLDERS[platform] ? apis.PLACEHOLDERS[platform] : apis.DEFAULT_PLACEHOLDER;
   }  
 }
-
 module.exports = apis
