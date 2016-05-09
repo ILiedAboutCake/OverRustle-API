@@ -276,9 +276,12 @@ var consider_metadata = function (strim_url) {
 
         // people on specific pages won't usually 
         // be listening for this event, so it's fine
-        getStrims().then(function(api_data){
-          browsers.emit('strims', api_data);        
-        })
+        // idea: keep a global 'lastTime' and only emit if time > (lastTime + 1.5 seconds)
+        // this will effectively rate limiting
+        // getStrims().then(function(api_data){
+        //   browsers.emit('strims', api_data);        
+        // })
+        
         // cache meta data
         jf.writeFile(metadata_path, io.metadata, function(err) {
           if(err)
@@ -378,10 +381,13 @@ function handleSocket (socket){
       }
       console.log('user disconnected from '+socket.strim);
 
+      // don't do this all the time, it blows up the server
+      // when many people leave a stream all at once
       getStrims().then(function(api_data){
         browsers.emit('strims', api_data);        
       })
 
+      // consider not doing this either to reduce requests per second
       if(rustlers > 0){
         watchers.to(socket.strim).emit('rustlers', rustlers)
       }
