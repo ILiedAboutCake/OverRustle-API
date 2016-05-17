@@ -4,14 +4,14 @@
   "description": "overustle.com api server",
   "repository": "git@github.com:hayksaakian/OverRustle-API.git",
   "dependencies": {
-    "bluebird": "^2.9.25",
-    "body-parser": "^1.10.1",
-    "dotenv": "^0.4.0",
-    "express": "^4.10.2",
-    "jsonfile": "^2.0.0",
-    "multer": "^0.1.6",
-    "redis": "^0.12.1",
-    "request": "^2.49.0",
-    "socket.io": "^1.2.0"
+    "bluebird": "2.9.25",
+    "body-parser": "1.10.1",
+    "dotenv": "0.4.0",
+    "express": "4.10.2",
+    "jsonfile": "2.0.0",
+    "multer": "0.1.6",
+    "redis": "0.12.1",
+    "request": "2.49.0",
+    "socket.io": "1.2.0"
   }
 }
