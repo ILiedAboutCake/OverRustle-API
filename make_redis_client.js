@@ -1,4 +1,9 @@
-var redis_host = '127.0.0.1'
+var dotenv = require('dotenv')
+dotenv.load()
+
+var redis_host = process.env.REDIS_HOST || '127.0.0.1'
+var redis_port = process.env.REDIS_PORT || '6379'
+
 var redis = require('redis')
 
 function makeRedisClient (redis_db) {
@@ -8,7 +13,7 @@ function makeRedisClient (redis_db) {
     rv = redis.createClient(rtg.port, rtg.hostname);
     rv.auth(rtg.auth.split(":")[1]);
   }else{
-    rv = redis.createClient('6379', redis_host);
+    rv = redis.createClient(redis_port, redis_host);
   }
   rv.select(redis_db); 
 
