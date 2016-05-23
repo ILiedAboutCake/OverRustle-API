@@ -89,6 +89,25 @@ var apis = {
         callback(api_data);
       })
     },
+
+    overpowered: function (api_data, error_callback, callback) {
+      return request.get({json:true, uri:"http://overpoweredstrim.me/api/"+api_data.channel}, function (e, r, res) {
+          if(e)
+            return error_callback(e)
+          
+          var json = res
+          api_data.live = r.statusCode != 404 && json.live === true;
+          if(api_data.live){
+              api_data.image_url = json.thumbnail; 
+              api_data.viewers = parseInt(json.viewers, 10);
+              api_data.title = json.title;
+          }else{
+            api_data.image_url = apis.getPlaceholder('overpowered')
+          }
+          callback(api_data);
+        })
+    },
+
     streamup: function (api_data, error_callback, callback) {
       return request.get({json:true, uri:"http://api.streamup.com/v1/channels/"+api_data.channel}, function (e, r, res) {
           if(e)
