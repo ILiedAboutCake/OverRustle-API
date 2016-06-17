@@ -53,7 +53,7 @@ var apis = {
       })
     },
     hitbox: function (api_data, error_callback, callback) {
-      return request.get({json:true, uri:"http://api.hitbox.tv/media/stream/"+api_data.channel}, function (e, r, res) {      
+      return request.get({json:true, uri:"https://api.hitbox.tv/media/stream/"+api_data.channel}, function (e, r, res) {      
         if(e)
           return error_callback(e)
         var json = res
@@ -69,6 +69,25 @@ var apis = {
           api_data.image_url = apis.getPlaceholder('hitbox')
         }
         callback(api_data);
+      })
+    },
+    "hitbox-vod": function (api_data, error_callback, callback) {
+      return request.get({json:true, uri:"https://api.hitbox.tv/media/video/"+api_data.channel}, function (e, r, res) {
+        if(e)
+          return error_callback(e)
+        var json = res
+        api_data.live = r.statusCode < 400 && json.hasOwnProperty('video')
+        // console.log("Got response: " + res.statusCode);
+        if(api_data.live){
+          // raise an error?
+          var _video = json.video[0];
+          api_data.image_url =  "http://edge.sf.hitbox.tv"+_video.media_media_thumbnail_large;
+          api_data.viewers = parseInt(_video.media_views, 10);
+          api_data.title = _video.media_status;
+        }else{
+          api_data.image_url = apis.getPlaceholder('hitbox-vod')
+        }
+        callback(api_data)
       })
     },
     ustream: function (api_data, error_callback, callback) {

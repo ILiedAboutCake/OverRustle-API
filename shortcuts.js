@@ -7,6 +7,7 @@ var shortcuts = {
     'tv':'twitch-vod',
     'c':'castamp',
     'h':'hitbox',
+    'hv':'hitbox-vod',
     'y':'youtube',
     // 'l':'youtube-playlist',
     'yl':'youtube-playlist',
