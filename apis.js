@@ -109,8 +109,8 @@ var apis = {
       })
     },
 
-    overpowered: function (api_data, error_callback, callback) {
-      return request.get({json:true, uri:"http://overpoweredstrim.me/api/"+api_data.channel}, function (e, r, res) {
+    angelthump: function (api_data, error_callback, callback) {
+      return request.get({json:true, uri:"http://angelthump.com/api/"+api_data.channel}, function (e, r, res) {
           if(e)
             return error_callback(e)
           
@@ -121,7 +121,7 @@ var apis = {
               api_data.viewers = parseInt(json.viewers, 10);
               api_data.title = json.title;
           }else{
-            api_data.image_url = apis.getPlaceholder('overpowered')
+            api_data.image_url = apis.getPlaceholder('angelthump')
           }
           callback(api_data);
         })

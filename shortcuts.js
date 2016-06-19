@@ -16,10 +16,10 @@ var shortcuts = {
     'nsfw-c':'nsfw-chaturbate',
     'u':'ustream',
     's':'streamup',
-    'o':'overpowered',
     'l':'livestream',
     'd':'dailymotion',
-    'a':'azubu',
+    'z':'azubu',
+    'a':'angelthump',
     // not the first letter -- so be careful
     'f':'afreeca',
     'p':'picarto',
