@@ -15,6 +15,7 @@ var url = require('url')
 var jf = require('jsonfile');
 var fs = require('fs')
 var extend = require('util')._extend;
+var hasOwnProperty = require('has');
 var apis = require('./apis.js')
 var shortcuts = require('./shortcuts.js')
 var feature = require('./feature.js')
@@ -68,10 +69,11 @@ function isGood(s){
 
 function isIdle (s) {
   var parts = url.parse(s, true).query
-  var valid_strim = parts.hasOwnProperty('s') && parts.hasOwnProperty('stream')
+  var valid_strim = hasOwnProperty(parts, 's')
+    && hasOwnProperty(parts, 'stream')
   if(valid_strim === false){
     // in case someone is on a channel page
-    valid_strim = parts.hasOwnProperty('user')
+    valid_strim = hasOwnProperty(parts, 'user')
   }
   return valid_strim === false
 }
@@ -430,7 +432,9 @@ function handleWatcher(socket){
   var surl = url.parse(socket.strim, true)
   var parts = surl.query
 
-  if(parts.hasOwnProperty('user') || parts.hasOwnProperty('s') || parts.hasOwnProperty('stream')){
+  if(hasOwnProperty(parts, 'user')
+    || hasOwnProperty(parts, 's')
+    || hasOwnProperty(parts, 'stream')){
     // LEGACY
     // no work to do here!
   }else{
@@ -445,7 +449,7 @@ function handleWatcher(socket){
   }
   // only called for watchers
   var rustlers = countWatchers(socket.strim)
-  if(parts.hasOwnProperty('user')){
+  if(hasOwnProperty(parts, 'user')){
     channel_fetcher({
       name: parts['user'],
       url: socket.strim,
