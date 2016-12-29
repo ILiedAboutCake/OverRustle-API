@@ -74,7 +74,7 @@ var apis = {
         if(api_data.live){
           // TODO: maybe get their offline image?
           var _stream = json.livestream[0]
-          api_data.image_url = "http://edge.sf.hitbox.tv" + _stream.media_thumbnail_large;
+          api_data.image_url = "https://edge.sf.hitbox.tv" + livestream.media_thumbnail_large;
           api_data.viewers = parseInt(_stream.media_views, 10);
           api_data.title = _stream.media_status;
         }else{
@@ -93,7 +93,7 @@ var apis = {
         if(api_data.live){
           // raise an error?
           var _video = json.video[0];
-          api_data.image_url =  "http://edge.sf.hitbox.tv"+_video.media_media_thumbnail_large;
+          api_data.image_url =  "https://edge.sf.hitbox.tv"+livesteam.media_media_thumbnail_large;
           api_data.viewers = parseInt(_video.media_views, 10);
           api_data.title = _video.media_status;
         }else{
@@ -103,7 +103,7 @@ var apis = {
       })
     },
     ustream: function (api_data, error_callback, callback) {
-      return request.get({json:true, uri:"http://api.ustream.tv/channels/"+api_data.channel+".json"}, function (e, r, res) {
+      return request.get({json:true, uri:"https://api.ustream.tv/channels/"+api_data.channel+".json"}, function (e, r, res) {
         if(e)
           return error_callback(e)
         var json = res
@@ -122,7 +122,7 @@ var apis = {
     },
 
     angelthump: function (api_data, error_callback, callback) {
-      return request.get({json:true, uri:"http://angelthump.com/api/"+api_data.channel}, function (e, r, res) {
+      return request.get({json:true, uri:"https://angelthump.com/api/"+api_data.channel}, function (e, r, res) {
           if(e)
             return error_callback(e)
           
@@ -140,7 +140,7 @@ var apis = {
     },
 
     streamup: function (api_data, error_callback, callback) {
-      return request.get({json:true, uri:"http://api.streamup.com/v1/channels/"+api_data.channel}, function (e, r, res) {
+      return request.get({json:true, uri:"https://api.streamup.com/v1/channels/"+api_data.channel}, function (e, r, res) {
           if(e)
             return error_callback(e)
           
@@ -161,7 +161,7 @@ var apis = {
 
     azubu: function (api_data, error_callback, callback) {
       // undocumented API's ayy lmao
-      return request.get({json:true, uri:"http://www.azubu.tv/api/video/active-stream/"+api_data.channel}, function (e, r, res) {
+      return request.get({json:true, uri:"https://www.azubu.tv/api/video/active-stream/"+api_data.channel}, function (e, r, res) {
         if(e)
           return error_callback(e)
         var json = res
@@ -204,7 +204,7 @@ var apis = {
     // http://xjudge-judyx.api.channel.livestream.com/2.0/widgetinfo.json?cachebuster=1429393784212
     livestream: function (api_data, error_callback, callback) {
       // undocumented API's ayy lmao
-      var lvuri = "http://x"+api_data.channel.toLowerCase().replace(/_/gi, '-')+"x.api.channel.livestream.com/2.0/widgetinfo.json?cachebuster="+(new Date().valueOf());
+      var lvuri = "https://x"+api_data.channel.toLowerCase().replace(/_/gi, '-')+"x.api.channel.livestream.com/2.0/widgetinfo.json?cachebuster="+(new Date().valueOf());
       // console.log("doing livestream", lvuri)
       return http.get(lvuri, function(r) {
         // Continuously update stream with data
@@ -224,7 +224,7 @@ var apis = {
           // but they don't provide a m3u8 stream when it's playing from replays
           if(api_data.live){
             // TODO: maybe get their offline image?
-            api_data.image_url = "http://thumbnail.api.livestream.com/thumbnail?name="+api_data.channel.toLowerCase(); 
+            api_data.image_url = "https://thumbnail.api.livestream.com/thumbnail?name="+api_data.channel.toLowerCase(); 
             api_data.viewers = parseInt(json.channel.currentViewerCount, 10);
             api_data.title = json.channel.title;
           }else{
@@ -251,7 +251,7 @@ var apis = {
       //   // but they don't provide a m3u8 stream when it's playing from replays
       //   if(api_data.live){
       //     // TODO: maybe get their offline image?
-      //     api_data.image_url = "http://thumbnail.api.livestream.com/thumbnail?name="+api_data.channel.toLowerCase(); 
+      //     api_data.image_url = "https://thumbnail.api.livestream.com/thumbnail?name="+api_data.channel.toLowerCase(); 
       //     api_data.viewers = parseInt(json.channel.currentViewerCount, 10);
       //     api_data.title = json.channel.title;
       //   }else{
@@ -263,7 +263,7 @@ var apis = {
     mlg: function (api_data, error_callback, callback) {
       // undocumented API's ayy lmao
       // no way to request data for a specific stream
-      return request.get({json:true, uri:"http://www.majorleaguegaming.com/api/channels/all.js?fields=id,name,slug,subtitle,stream_name,image_16_9_medium,description"}, function (e, r, res) {
+      return request.get({json:true, uri:"https://www.majorleaguegaming.com/api/channels/all.js?fields=id,name,slug,subtitle,stream_name,image_16_9_medium,description"}, function (e, r, res) {
         if(e)
           return error_callback(e)
         var json = res
@@ -287,7 +287,7 @@ var apis = {
         }
         api_data.image_url = _stream.image_16_9_medium
         api_data.title = _stream.subtitle
-        request.get({json:true, uri: "http://streamapi.majorleaguegaming.com/service/streams/status/"+_stream.stream_name}, function (e, r, res) {
+        request.get({json:true, uri: "https://streamapi.majorleaguegaming.com/service/streams/status/"+_stream.stream_name}, function (e, r, res) {
           if(e)
             return error_callback(e)
           var json = res
@@ -427,7 +427,7 @@ var apis = {
                     // api_data.image_url = snippet.thumbnails
           api_data.image_url = json.snippet.thumbnails.medium.url
           // normally they don't give you maxresdefault
-          // api_data.image_url = "http://img.youtube.com/vi/"+api_data.channel+"/maxresdefault.jpg"
+          // api_data.image_url = "https://img.youtube.com/vi/"+api_data.channel+"/maxresdefault.jpg"
                     api_data.title = json.snippet.title;
         }else{
           api_data.image_url = apis.getPlaceholder('youtube')
