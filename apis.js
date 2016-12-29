@@ -4,7 +4,7 @@ var http = require("http")
 var request = require('request');
 var extend = require('util')._extend;
 var apis = {
-  DEFAULT_PLACEHOLDER: "http://overrustle.com/img/jigglymonkey.gif",
+  DEFAULT_PLACEHOLDER: "https://overrustle.com/img/thinking.png",
   // TODO add placeholders for each individual platform
   PLACEHOLDERS: {
     "picarto": "https://www.picarto.tv/img/thumbnail_stream_default.png",
