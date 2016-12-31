@@ -10,7 +10,7 @@ module.exports = function (metadata, callback) {
   var channel_name = metadata['name']
   console.log('starting redis for', channel_name)
   client.hgetall("user:"+channel_name, function (e, obj) {
-    console.log('did hgetall for', channel_name, 'error:', e, 'result:', obj)
+    console.log('did hgetall for', channel_name)
     // return bad things
     // if no channel
     if(!obj || e){

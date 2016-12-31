@@ -313,7 +313,7 @@ function validateIP(socket){
   socket.ip = socket.request.connection._peername.address;
 
   if(io.ips.hasOwnProperty(socket.ip) && (io.ips[socket.ip]+1 > MAX_CONNECTIONS) ){
-    console.log('BLOCKED a connection because too many connections:', socket.request.connection._peername);
+    console.log('BLOCKED a connection because too many connections:', socket.request.connection.remoteAddress);
     socket.disconnect()
     return false
   }
@@ -325,7 +325,7 @@ function validateStrim(socket, path){
   socket.strim = isGood(path);
 
   if(socket.strim === false){
-    console.log('BLOCKED a connection because BAD STRIM:', socket.strim, socket.request.connection._peername);
+    console.log('BLOCKED a connection because BAD STRIM:', socket.strim, socket.request.connection.remoteAddress);
     socket.disconnect()
     return false
   }
@@ -384,7 +384,7 @@ function handleSocket (socket){
           });
         }
       }
-      console.log('user disconnected from '+socket.strim);
+      console.log(socket.request.connection.remoteAddress + ' user disconnected from '+socket.strim);
 
       // don't do this all the time, it blows up the server
       // when many people leave a stream all at once
@@ -481,7 +481,7 @@ watchers.on('connection', function (socket) {
   }
   // console.log('connected a client!')
   socket.on('watch', function (data){
-    console.log('client', socket.request.headers['user-agent'], 'wants to watch', data)
+    console.log('client', socket.request.connection.remoteAddress, 'wants to watch', data.path)
     if(validateStrim(socket, data['path'])){
       // BUG
       // firefox has some kind of issue with emitted events
