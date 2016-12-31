@@ -313,7 +313,7 @@ function validateIP(socket){
   socket.ip = socket.request.connection._peername.address;
 
   if(io.ips.hasOwnProperty(socket.ip) && (io.ips[socket.ip]+1 > MAX_CONNECTIONS) ){
-    console.log('BLOCKED a connection because too many connections:', socket.request.connection.remoteAddress);
+    console.log(socket.request.connection.remoteAddress +': BLOCKED a connection because too many connections');
     socket.disconnect()
     return false
   }
@@ -325,7 +325,7 @@ function validateStrim(socket, path){
   socket.strim = isGood(path);
 
   if(socket.strim === false){
-    console.log('BLOCKED a connection because BAD STRIM:', socket.strim, socket.request.connection.remoteAddress);
+    console.log(socket.request.connection.remoteAddress +': BLOCKED a connection because BAD STRIM');
     socket.disconnect()
     return false
   }
@@ -384,7 +384,7 @@ function handleSocket (socket){
           });
         }
       }
-      console.log(socket.request.connection.remoteAddress + ' user disconnected from '+socket.strim);
+      console.log(socket.request.connection.remoteAddress + ': user disconnected from ' + socket.strim);
 
       // don't do this all the time, it blows up the server
       // when many people leave a stream all at once
@@ -420,7 +420,7 @@ function handleSocket (socket){
 function handleBrowser(socket){
   socket.idle = true
   handleSocket(socket)
-  console.log('a user is idle on '+socket.strim, socket.request.connection.remoteAddress);
+  console.log(socket.request.connection.remoteAddress + ': Idle on '+socket.strim);
 
   getStrims().then(function(api_data){
     socket.emit('strims', api_data);        
@@ -467,7 +467,7 @@ function handleWatcher(socket){
     })
   }
 
-  console.log('a user joined '+socket.strim, socket.request.connection.remoteAddress);
+  console.log(socket.request.connection.remoteAddress + ': Joined ' + socket.strim);
 
   getStrims().then(function(api_data){
     browsers.emit('strims', api_data);        
@@ -481,7 +481,7 @@ watchers.on('connection', function (socket) {
   }
   // console.log('connected a client!')
   socket.on('watch', function (data){
-    console.log('client', socket.request.connection.remoteAddress, 'wants to watch', data.path)
+    console.log(socket.request.connection.remoteAddress + ': Wants to watch', data.path)
     if(validateStrim(socket, data['path'])){
       // BUG
       // firefox has some kind of issue with emitted events
@@ -499,7 +499,7 @@ browsers.on('connection', function (socket) {
   if(!validateIP(socket)){
     return
   }
-  console.log('connnected a browser from', socket.request.headers.host)
+  console.log(socket.request.connection.remoteAddress +': Connnected a browser from', socket.request.headers.host)
   // strim or referrer is unimportant here
   // so it doesn't need to be very accurate
   socket.strim = socket.request.headers.referer
