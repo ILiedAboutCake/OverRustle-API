@@ -6,6 +6,9 @@ app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 app.use(multer()); // for parsing multipart/form-data
 
+var dotenv = require('dotenv')
+dotenv.load()
+
 var io = require('socket.io')(http);
 // share a reference
 app.socketio = io;
@@ -26,10 +29,10 @@ var md_client = makeRedisClient(4)
 var admin = require('./admin.js')
 var channel_fetcher = require('./channel_fetcher')
 
-var PORT = 9998;
+var PORT = process.env.HTTP_PORT || '9998'
 var REGEX = /[^A-z 0-9 \?\&\/=/:/-]/ig
-var MAX_CONNECTIONS = 5
-var API_CACHE_AGE = 60000
+var MAX_CONNECTIONS = process.env.HTTP_CONNECTIONS || '5'
+var API_CACHE_AGE = process.env.HTTP_CACHE || '50000'
 
 function isGood(s){
   if(typeof(s) !== typeof('string')){
@@ -41,7 +44,7 @@ function isGood(s){
     return false
   }
 
-  if(/(twitch|hitbox|mlg)/gi.test(s)){
+  if(/(twitch|hitbox|mlg|angelthump)/gi.test(s)){
     // console.log('forcing lowercase on case insensitive platforms')
     s = s.toLowerCase()
   }
@@ -417,7 +420,7 @@ function handleSocket (socket){
 function handleBrowser(socket){
   socket.idle = true
   handleSocket(socket)
-  console.log('a user is idle on '+socket.strim, socket.request.connection._peername);
+  console.log('a user is idle on '+socket.strim, socket.request.connection.remoteAddress);
 
   getStrims().then(function(api_data){
     socket.emit('strims', api_data);        
@@ -464,7 +467,7 @@ function handleWatcher(socket){
     })
   }
 
-  console.log('a user joined '+socket.strim, socket.request.connection._peername);
+  console.log('a user joined '+socket.strim, socket.request.connection.remoteAddress);
 
   getStrims().then(function(api_data){
     browsers.emit('strims', api_data);        
