@@ -1,10 +1,7 @@
 // TODO: Migrate all this code to the website server
 // once Beta goes into production
 
-var dotenv = require('dotenv')
-dotenv.load()
-
-var API_SERVER = "https://" + process.env.FQDN_BACKEND
+var API_SERVER = "https://api.overrustle.com"
 // var API_SERVER = "http://localhost:9998"
 
 var socket = io(API_SERVER+'/stream', {
