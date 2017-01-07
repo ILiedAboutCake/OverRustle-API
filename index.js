@@ -244,19 +244,41 @@ if(!fs.existsSync("./cache")){
   fs.mkdirSync("./cache")
 }
 
-if (fs.existsSync(metadata_path)) {
-  io.metadata = jf.readFileSync(metadata_path)
-}else{
-  io.metadata = {}
-  jf.writeFileSync(metadata_path, {})  
-}
+//lets check to make sure the files are valid JSON
+fs.readFile(metadata_path, function read(err,data) {
+  if (err) {
+    if (err.code === "ENOENT") {
+      console.log(metadata_path + ' not found. Creating new file...')
+      io.metadata = {}
+      jf.writeFileSync(metadata_path, {})
+    }
+  } else if (data.length == 0) {
+    console.log(metadata_path + ' is empty. This is probably due to the API crashing. Creating new file...')
+    fs.unlinkSync(metadata_path)
+    io.metadata = {}
+    jf.writeFileSync(metadata_path, {})
+  } else {
+    io.metadata = jf.readFileSync(metadata_path)
+  }
+})
 
-if (fs.existsSync(metaindex_path)) {
-  io.metaindex = jf.readFileSync(metaindex_path)
-}else{
-  io.metaindex = {}
-  jf.writeFileSync(metaindex_path, {})  
-}
+fs.readFile(metaindex_path, function read(err,data) {
+  if (err) {
+    if (err.code === "ENOENT") {
+      console.log(metaindex_path + ' not found. Creating new file...')
+      io.metadata = {}
+      jf.writeFileSync(metaindex_path, {})
+    }
+  } else if (data.length == 0) {
+    console.log(metaindex_path + ' is empty. This is probably due to the API crashing. Creating new file...')
+    fs.unlinkSync(metaindex_path)
+    io.metadata = {}
+    jf.writeFileSync(metaindex_path, {})
+  } else {
+    io.metadata = jf.readFileSync(metaindex_path)
+  }
+})
+
 var consider_metadata = function (strim_url) {
   return function (md) {
     var meta_key = md['platform']+'/'+md['channel']
