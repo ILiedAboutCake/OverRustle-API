@@ -259,7 +259,7 @@ if(!fs.existsSync("./cache")){
   var path = meta.path;
   var key = meta.key;
   try {
-    var data = fs.readFileSync(path);
+    var data = jf.readFileSync(path);
     if (!data.length) {
       throw new Error(path + ' is empty. This is probably due to the API crashing.');
     }
