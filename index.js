@@ -32,7 +32,7 @@ var channel_fetcher = require('./channel_fetcher')
 var PORT = process.env.HTTP_PORT || '9998'
 var REGEX = /[^A-z 0-9 \?\&\/=/:/-]/ig
 var MAX_CONNECTIONS = process.env.HTTP_CONNECTIONS || '5'
-var API_CACHE_AGE = process.env.HTTP_CACHE || '50000'
+var API_CACHE_AGE = process.env.HTTP_CACHE || '60000'
 
 function isGood(s){
   if(typeof(s) !== typeof('string')){
