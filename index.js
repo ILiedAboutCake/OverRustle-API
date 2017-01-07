@@ -244,40 +244,40 @@ if(!fs.existsSync("./cache")){
   fs.mkdirSync("./cache")
 }
 
-//lets check to make sure the files are valid JSON
-fs.readFile(metadata_path, function read(err,data) {
-  if (err) {
-    if (err.code === "ENOENT") {
-      console.log(metadata_path + ' not found. Creating new file...')
-      io.metadata = {}
-      jf.writeFileSync(metadata_path, {})
-    }
-  } else if (data.length == 0) {
-    console.log(metadata_path + ' is empty. This is probably due to the API crashing. Creating new file...')
-    fs.unlinkSync(metadata_path)
-    io.metadata = {}
-    jf.writeFileSync(metadata_path, {})
-  } else {
-    io.metadata = jf.readFileSync(metadata_path)
-  }
-})
 
-fs.readFile(metaindex_path, function read(err,data) {
-  if (err) {
-    if (err.code === "ENOENT") {
-      console.log(metaindex_path + ' not found. Creating new file...')
-      io.metadata = {}
-      jf.writeFileSync(metaindex_path, {})
-    }
-  } else if (data.length == 0) {
-    console.log(metaindex_path + ' is empty. This is probably due to the API crashing. Creating new file...')
-    fs.unlinkSync(metaindex_path)
-    io.metadata = {}
-    jf.writeFileSync(metaindex_path, {})
-  } else {
-    io.metadata = jf.readFileSync(metaindex_path)
+// lets check to make sure the files are valid JSON
+[
+  {
+    path: metadata_path,
+    key: 'metadata',
+  },
+  {
+    path: metaindex_path,
+    key: 'metaindex',
   }
-})
+].forEach(function (meta) {
+  var path = meta.path;
+  var key = meta.key;
+  try {
+    var data = fs.readFileSync(path);
+    if (!data.length) {
+      throw new Error(path + ' is empty. This is probably due to the API crashing.');
+    }
+    io[key] = data;
+  }
+  catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log(path + ' not found. Creating new file...');
+    }
+    else {
+      console.log(err, 'Creating new file...');
+      fs.unlinkSync(path);
+    }
+    io[key] = {};
+    jf.writeFileSync(path, {});
+  }
+});
+
 
 var consider_metadata = function (strim_url) {
   return function (md) {
