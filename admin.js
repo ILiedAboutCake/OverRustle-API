@@ -106,7 +106,7 @@ var admin = {
       return false
     }
 
-    data['code'] = "window.location = 'http://api.overrustle.com/" +data['to'] +"';"    
+    data['code'] = "window.location = 'https://" + process.env.FQDN_BACKEND + "/" +data['to'] +"';"    
 
     if (data.hasOwnProperty('who') && data['who'] && data['who'] !== 'all') {
       var conditional = "window.location.toString().toLowerCase().indexOf('"+
@@ -115,7 +115,7 @@ var admin = {
         conditional = "true"
       }
       data['code'] = "if (" + conditional + ") {; "+
-        "window.location = 'http://api.overrustle.com/"+data['to']+"';};"
+        "window.location = 'https://" + process.env.FQDN_BACKEND + "/"+data['to']+"';};"
     }
     if(data['who'] === 'offline'){
       // TODO: figure out which strims are offline

@@ -1,5 +1,8 @@
 var url = require('url')
 
+var dotenv = require('dotenv')
+dotenv.load()
+
 var shortcuts = {
   list: {
     't':'twitch',
@@ -39,7 +42,7 @@ var shortcuts = {
       res.json(shortcuts.list)
     })
     app.get('/', function (req, res) {
-      var redirect_to = 'http://overrustle.com'
+      var redirect_to = 'https://' + process.env.FQDN_FRONTEND + '/'
       console.log('redirecting to: '+redirect_to);
       res.redirect(redirect_to);
     })
@@ -47,14 +50,14 @@ var shortcuts = {
       if (shortcuts.list.hasOwnProperty(req.params.platform.toLowerCase())) {
         req.params.platform = shortcuts.list[req.params.platform.toLowerCase()];
       };
-      var redirect_to = 'http://overrustle.com/'+
+      var redirect_to = 'https://' + process.env.FQDN_FRONTEND + '/'+
         req.params.platform+'/'+req.params.channel;
       console.log('redirecting to: '+redirect_to);
       res.redirect(url.format(redirect_to));
     })
     // handle custom user channels
     app.get('/:channel', function (req, res) {
-      return res.redirect("http://overrustle.com/"+req.params.channel)
+      return res.redirect("https://" + process.env.FQDN_FRONTEND + "/"+req.params.channel)
     })
   }
 }
