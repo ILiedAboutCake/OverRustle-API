@@ -547,10 +547,6 @@ app.get('/api', function (req, res){
   })
 });
 
-app.get('/strims.js', function (req, res){
-  res.sendFile(__dirname + '/strims.js');
-});
-
 admin.init(app);
 
 // for debug to serve different urls
