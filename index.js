@@ -44,7 +44,7 @@ function isGood(s){
     return false
   }
 
-  if(/(twitch|hitbox|mlg|angelthump)/gi.test(s)){
+  if(/(twitch|hitbox|mlg)/gi.test(s)){
     // console.log('forcing lowercase on case insensitive platforms')
     s = s.toLowerCase()
   }

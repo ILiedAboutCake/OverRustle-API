@@ -74,7 +74,7 @@ var apis = {
         if(api_data.live){
           // TODO: maybe get their offline image?
           var _stream = json.livestream[0]
-          api_data.image_url = "https://edge.sf.hitbox.tv" + livestream.media_thumbnail_large;
+          api_data.image_url = "https://edge.sf.hitbox.tv" +_stream.media_thumbnail_large;
           api_data.viewers = parseInt(_stream.media_views, 10);
           api_data.title = _stream.media_status;
         }else{
@@ -93,7 +93,7 @@ var apis = {
         if(api_data.live){
           // raise an error?
           var _video = json.video[0];
-          api_data.image_url =  "https://edge.sf.hitbox.tv"+livesteam.media_media_thumbnail_large;
+          api_data.image_url =  "https://edge.sf.hitbox.tv"+_video.media_media_thumbnail_large;
           api_data.viewers = parseInt(_video.media_views, 10);
           api_data.title = _video.media_status;
         }else{
